@@ -1,0 +1,18 @@
+{
+  "url": "https://thnordiclux.vercel.app/product/75e19ba8-171c-4479-92ae-6fd90869e835",
+  "sku": "SK80CT0153",
+  "name": "Garnier Body Lotion Cocoa",
+  "brandSection": "GARNIER",
+  "productType": "380ml",
+  "category": "Skin Care",
+  "country": "USA",
+  "priceText": "$19.99",
+  "inStock": true,
+  "stock": 1,
+  "reviewCount": 0,
+  "description": "Garnier Nourishing Body Butter hydrated up to cell layers deep* and provides up to 100h hydration**. This fast-absorbing butter contains 97% natural origin ingredients.",
+  "images": [
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7ZxOTwAhnvAXEGt6LmnJ-lOTOWjwo6Qn_TA&s"
+  ],
+  "retrievedAt": "2026-08-20T19:40:29.827Z"
+}

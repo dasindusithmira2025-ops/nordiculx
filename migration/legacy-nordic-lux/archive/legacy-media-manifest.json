@@ -1,0 +1,511 @@
+{
+  "source": {
+    "repository": "https://github.com/thenordiclux-a11y/thnordiclux",
+    "branch": "main",
+    "commit": "cc86865c90fe7dd2e78d677720395a7347cfb665",
+    "productSourceFile": "app/lib/seed-products.ts",
+    "mediaRoot": "public/products"
+  },
+  "mediaRoot": "public/products",
+  "count": 54,
+  "files": [
+    {
+      "legacyPath": "/products/cv-advanced-repair-ointment.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 423474,
+      "sha256": "a70934c07a829a304f4541f5650250a6eac77b4375648ca6ec83c7332dbb9c1a",
+      "referencedBy": [
+        "CV-ADVANCED-REPAIR-OINTMENT-85"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-blemish-control-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 54908,
+      "sha256": "925f73776f8ef578d21e2b25f443dca97af357015682f871f0c3eeb914222fce",
+      "referencedBy": [
+        "CV-BLEMISH-CONTROL-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-cream-to-foam-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 59812,
+      "sha256": "33cb662a524850fd07b54a05be3fab6ac87a4db717dfab13fc2b33366d375bdd",
+      "referencedBy": [
+        "CV-CREAM-TO-FOAM-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-eye-repair-cream.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 45662,
+      "sha256": "56ab666fcffbc0fe9b78d47e25166013bf2e1a5c0c33b48e1a9976a90e0f2921",
+      "referencedBy": [
+        "CV-EYE-REPAIR-CREAM-14"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-facial-lotion-am-spf50.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 5206,
+      "sha256": "7359de77e07b4865f3f933826b5cfad0ddc7e441d0ea0c33392267834218b3ec",
+      "referencedBy": [
+        "CV-FACIAL-LOTION-AM-SPF50-52"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-facial-lotion-pm.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 53864,
+      "sha256": "7946525ae69b3afad75a6b83b401ec8c11a4b9bd9254caaca924b8a7175fd3d4",
+      "referencedBy": [
+        "CV-FACIAL-LOTION-PM-52"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-foaming-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 120020,
+      "sha256": "934181afca5458b52ef847f0550794c3a9bab6df24859bcead0a9ceb990ed5b7",
+      "referencedBy": [
+        "CV-FOAMING-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-foaming-oil-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 54394,
+      "sha256": "0f7dd726ae662004b17b419400a6f5076bdb3c332335c9ecdfe07f0799972c5f",
+      "referencedBy": [
+        "CV-FOAMING-OIL-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-hydrating-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 21842,
+      "sha256": "72eb4330074d29290bbbf8f1bae1310b6e093cc03e51d289c99a9908a39a5700",
+      "referencedBy": [
+        "CV-HYDRATING-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-moisturizing-cream.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 84529,
+      "sha256": "ecac82e450d17c8d5564a0ccbccab7a2af4995ddcdeedc9cc2afcf90ecfc6ed3",
+      "referencedBy": [
+        "CV-MOISTURIZING-CREAM-454"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-moisturizing-lotion.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 85964,
+      "sha256": "b50d032560145cdeddf5b0e531d54b72069240f002e5b95ddbf4e47b825259ae",
+      "referencedBy": [
+        "CV-MOISTURIZING-LOTION-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-sa-smoothing-cleanser.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 78982,
+      "sha256": "e531dfdcab85dd518d6d7bf07edfa3ddaa0ca736dee8e20c8a84325a4a8d1dbe",
+      "referencedBy": [
+        "CV-SA-SMOOTHING-CLEANSER-236"
+      ]
+    },
+    {
+      "legacyPath": "/products/cv-sa-smoothing-cream.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 35509,
+      "sha256": "52444c36676002e4ddd6b59c32a3a6c03ad31f0b965ff2767a014530079e4df9",
+      "referencedBy": [
+        "CV-SA-SMOOTHING-CREAM-177"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-acne-set.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 38654,
+      "sha256": "9f5c0abd7a4d17b713a5be234b02c4648424cd8fb662b956e2cd28624c839298",
+      "referencedBy": [
+        "TO-ACNE-SET"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-acne-set.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-aha-bha-peel-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 15816,
+      "sha256": "992f3cba5f3d45cd6fa743e65e9c22dc82f37c30a30eebf8e8f11dcf4a570da0",
+      "referencedBy": [
+        "TO-AHA-BHA-PEEL-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-aha-bha-peel-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 120311,
+      "sha256": "a7352392e1ce63faf860a3e8489e3e5d2b2ba2163a1eabe5a3a3fcc377ee60e2",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-azelaic-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 13912,
+      "sha256": "d10d622f475a0648d21c404d3516638d7910bc3c27d1de049d0a29328e786bde",
+      "referencedBy": [
+        "TO-AZELAIC-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-azelaic-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 120035,
+      "sha256": "8e42ce0e43e85a0fcb97aa6ffa33c15aecb0b0834fd7d98798d79ed76ba8b0a8",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-caffeine-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 20716,
+      "sha256": "bc51966bca4583c512d5dc2b77b0638f3ac37ba9d2b7f0ba3ed207a6335ca699",
+      "referencedBy": [
+        "TO-CAFFEINE-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-caffeine-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 145198,
+      "sha256": "ca57b29e875ee5f23b616fddbb38cd3c5cb30d59fcef7a86af9400ac7c3a052f",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-glycolic-toner-240.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 22310,
+      "sha256": "8d90aa880081ba0ce18238078190321c316da517ed4089db09ce0fd11c3f1fc3",
+      "referencedBy": [
+        "TO-GLYCOLIC-TONER-240"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-glycolic-toner-240.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 207950,
+      "sha256": "06dce15ed99134667a4c74e5b3b37c41a55f318f4584bca60daceb62e1c9f87d",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-ha-b5-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 16074,
+      "sha256": "07a6d11607dbde950858766c904467f668245f15b79c5dfd02cd11316cf6efcd",
+      "referencedBy": [
+        "TO-HA-B5-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-ha-b5-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 113237,
+      "sha256": "a6a3211a2d9b3dd2631627ec7bc2e44d60301e5a3fc7143326cd0c93799e76a1",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-ha-b5-ceramides-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 17086,
+      "sha256": "7f9a9392281e32c24c39dc274c86af94e1a9714a3c180b3a51034ffdf4811463",
+      "referencedBy": [
+        "TO-HA-B5-CERAMIDES-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-ha-b5-ceramides-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 90807,
+      "sha256": "44f968562bf853ff6d2d7453272e09831ceed23bdfd923165ca44c7c14895070",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-multi-peptide-eye-15.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 19434,
+      "sha256": "f3867fb3cf2de5c67b885228940a56fe7628c89ed92dbb8f38c5a8cf4ce88509",
+      "referencedBy": [
+        "TO-MULTI-PEPTIDE-EYE-15"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-multi-peptide-eye-15.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 100550,
+      "sha256": "b2472168c03f6007336b7abef7048b817e1aff80dd3366198fde174e52c0f172",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-multi-peptide-hair-60.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 20378,
+      "sha256": "9040718e7fdc2b2073e0179881741be486545f3072964f80182041681a3c5513",
+      "referencedBy": [
+        "TO-MULTI-PEPTIDE-HAIR-60"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-multi-peptide-hair-60.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 152943,
+      "sha256": "0e2a92c7feca8cecb5ec635e41fb1461da9d74f3a1785f76a060a48342019e7f",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-niacinamide-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 14842,
+      "sha256": "7f122198762e795c3d6eee8860e538849b6159070984f2d7c80c575058a2ee0d",
+      "referencedBy": [
+        "TO-NIACINAMIDE-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-niacinamide-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 92622,
+      "sha256": "7f2b1cfafd69f3e366b06ca2e1e4662527b8eb34eff3f9063a0c407646c2792d",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-niacinamide-30.webp",
+      "exists": true,
+      "fileType": "webp",
+      "bytes": 43260,
+      "sha256": "c29d149a901f92d8c92693d76f145f9c453fb085eef10f4b8691d87d8a6523d6",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-niacinamide-powder.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 17696,
+      "sha256": "c7172d5476b991b7225df7b64667c181498f6be7bf3bf17ac23bff9d3d8cef23",
+      "referencedBy": [
+        "TO-NIACINAMIDE-POWDER"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-niacinamide-powder.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 145329,
+      "sha256": "3b5e0a3423ba4a2323886d39b90a5653dc014c0db99d663e6d78a98b89e0915a",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-nmf-betaglucan-100.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 206125,
+      "sha256": "791c3fa914d18a6cfc8fa6ae438fca8cf21975423f0398523aa0dfc9c4e9242f",
+      "referencedBy": [
+        "TO-NMF-BETAGLUCAN-100"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-nmf-betaglucan-100.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-nmf-ha-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 18004,
+      "sha256": "194a29b5ac4375fca065bd3ff3442c8966371c5533124933dbba40ad871d3a14",
+      "referencedBy": [
+        "TO-NMF-HA-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-nmf-ha-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 174845,
+      "sha256": "f86fa276d4fd73506565a419d09bb78fc786e0b13af28c6f1e8a5f292f1b83f6",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-nmf-phytoceramides-100.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 22045,
+      "sha256": "f453093b76e8783cf84097e7be2cfdc9387b8849371ff465159b2def5e23edd9",
+      "referencedBy": [
+        "TO-NMF-PHYTOCERAMIDES-100"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-nmf-phytoceramides-100.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-retinol-05-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 191251,
+      "sha256": "57127edee4c1643a23b33bb16e662473e1108d1189f9c83cd5472c3eea8fffba",
+      "referencedBy": [
+        "TO-RETINOL-05-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-retinol-05-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-salicylic-body-240.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 62297,
+      "sha256": "c498165bdb7a1e953ffe2185d847bf962f5c3ef33a6f15677904c77568a7a939",
+      "referencedBy": [
+        "TO-SALICYLIC-BODY-240"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-salicylic-body-240.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-soothing-barrier-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 5981,
+      "sha256": "f86694e8c4cbe4eada074aec237c062ed9ad8e54afb3e6ede35e68c1e1e0d831",
+      "referencedBy": [
+        "TO-SOOTHING-BARRIER-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-soothing-barrier-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-squalane-cleanser-50.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 18236,
+      "sha256": "4540db30d9b90fa48f14c869c462f169c1feb0ddca497cead8df2d43c08b7664",
+      "referencedBy": [
+        "TO-SQUALANE-CLEANSER-50"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-squalane-cleanser-50.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 176468,
+      "sha256": "bd1c07524b59bf615f92109ae5ac8c26c637dffdda6bafd275dfc737058ee4b6",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-squalane-lip-balm-15.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 114324,
+      "sha256": "9d0916056e7806d20d29ddf70a4186c7272205c2260ef750dd245c1acb9403b0",
+      "referencedBy": [
+        "TO-SQUALANE-LIP-BALM-15"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-squalane-lip-balm-15.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    },
+    {
+      "legacyPath": "/products/to-uv-spf45-30.jpg",
+      "exists": true,
+      "fileType": "jpg",
+      "bytes": 30241,
+      "sha256": "e47d50f2c78a51e463383d2a19cc5d9317862c1cac97d92dcb5c37e66ef0d826",
+      "referencedBy": [
+        "TO-UV-SPF45-30"
+      ]
+    },
+    {
+      "legacyPath": "/products/to-uv-spf45-30.png",
+      "exists": true,
+      "fileType": "png",
+      "bytes": 18,
+      "sha256": "cf03797adcae3a3d1dcaa178667e0d8a80229972d6cda3d2b4249baa0621d609",
+      "referencedBy": []
+    }
+  ]
+}

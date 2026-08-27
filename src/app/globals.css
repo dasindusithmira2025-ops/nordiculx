@@ -1,0 +1,519 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   NORDIC LUX — DESIGN TOKENS
+   The single source of visual truth. Documented in /docs/DESIGN.md.
+
+   Concept: "cold light, warm paper".
+   Nordic restraint — air, precision, hairlines — on warm paper stock, with
+   deep botanical ink for editorial moments. Product photography is always the
+   loudest thing on screen; the interface is quiet around it.
+   ========================================================================== */
+
+@theme {
+  /* --- raw palette ------------------------------------------------------
+     Never use these directly in components. Use the semantic tokens below so
+     a block works on both paper and ink surfaces. */
+
+  /* Ink — deep, green-shifted blacks for editorial environments */
+  --color-ink-950: #080a09;
+  --color-ink-900: #0d0f0e;
+  --color-ink-800: #171a17;
+  --color-ink-700: #22261f;
+  --color-ink-600: #333830;
+
+  /* Paper — warm ivory and bone for commerce environments */
+  --color-paper-50: #faf8f4;
+  --color-paper-100: #f6f3ec;
+  --color-paper-200: #f3efe7;
+  --color-paper-300: #eae4d8;
+  --color-paper-400: #ddd5c5;
+
+  /* Botanical sage — the primary accent family */
+  --color-sage-100: #e4e8df;
+  --color-sage-300: #b8c2ae;
+  --color-sage-500: #7c8a73;
+  --color-sage-700: #55614e;
+  --color-sage-900: #2c3a2e;
+
+  /* Warm taupe — secondary accent, used sparingly */
+  --color-taupe-200: #ded3c3;
+  --color-taupe-400: #bfae97;
+  --color-taupe-600: #a79680;
+  --color-taupe-800: #6f6252;
+
+  /* Neutral stone — dividers, muted type, disabled states */
+  --color-stone-200: #d9d5cc;
+  --color-stone-400: #b8b3a7;
+  --color-stone-600: #8a8d83;
+  --color-stone-700: #5a5d56;
+  --color-stone-900: #1b1d1a;
+
+  /* Signal — deliberately desaturated so nothing screams */
+  --color-signal-success: #4a6b4e;
+  --color-signal-sale: #9a5b3c;
+  --color-signal-warning: #a8813f;
+  --color-signal-danger: #8c3a2e;
+
+  /* --- typography -------------------------------------------------------
+     Two families only. A single-weight display serif enforces restraint:
+     hierarchy comes from size and space, never from piling on weights. */
+  --font-display:
+    var(--font-instrument-serif), 'Iowan Old Style', Georgia, serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid display sizes. Editorial headlines scale with the viewport so a
+     hero feels equally deliberate at 375px and 1920px. */
+  --text-display-xl: clamp(2.75rem, 8.5vw, 8rem);
+  --text-display-xl--line-height: 0.92;
+  --text-display-xl--letter-spacing: -0.02em;
+
+  --text-display-lg: clamp(2.25rem, 5.5vw, 4.75rem);
+  --text-display-lg--line-height: 0.98;
+  --text-display-lg--letter-spacing: -0.015em;
+
+  --text-display-md: clamp(1.875rem, 3.4vw, 3rem);
+  --text-display-md--line-height: 1.06;
+  --text-display-md--letter-spacing: -0.01em;
+
+  --text-display-sm: clamp(1.5rem, 2.4vw, 2rem);
+  --text-display-sm--line-height: 1.14;
+  --text-display-sm--letter-spacing: -0.005em;
+
+  /* UI scale */
+  --text-2xs: 0.6875rem; /* 11px — eyebrows, legal */
+  --text-2xs--line-height: 1.4;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.8125rem; /* 13px — dense commerce UI */
+  --text-sm--line-height: 1.55;
+  --text-base: 0.9375rem; /* 15px — default body */
+  --text-base--line-height: 1.65;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.5;
+
+  /* Editorial reading size — long-form articles only */
+  --text-read: 1.125rem;
+  --text-read--line-height: 1.75;
+
+  --tracking-eyebrow: 0.18em;
+  --tracking-label: 0.08em;
+  --tracking-tight: -0.01em;
+
+  /* --- geometry ---------------------------------------------------------
+     Near-zero radius is deliberate and non-negotiable: sharp corners read as
+     considered and printed; rounded cards read as generic template. */
+  --radius-none: 0px;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-full: 9999px; /* chips and avatars only */
+
+  /* --- elevation --------------------------------------------------------
+     Structure comes from hairlines, not shadows. Only overlays cast one. */
+  --shadow-overlay: 0 24px 64px -24px rgb(13 15 14 / 0.28);
+  --shadow-drawer: -12px 0 48px -16px rgb(13 15 14 / 0.22);
+  --shadow-lift: 0 12px 32px -18px rgb(13 15 14 / 0.25);
+
+  /* --- motion -----------------------------------------------------------
+     Slow, weighted, never bouncy. Nothing overshoots. */
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --duration-micro: 160ms;
+  --duration-standard: 320ms;
+  --duration-editorial: 700ms;
+
+  /* --- layout -----------------------------------------------------------
+     Wide max container — luxury commerce wants air at the edges, not a
+     narrow blog column. */
+  --container-page: 1600px;
+  --container-prose: 68ch;
+
+  --breakpoint-xs: 24rem; /* 384px */
+}
+
+/* --------------------------------------------------------------------------
+   SEMANTIC TOKENS
+
+   These indirect through plain CSS variables so an entire section can flip
+   between the light commerce environment and the dark editorial environment
+   with `data-surface="ink"` — without any component knowing which it is in.
+   `@theme inline` makes Tailwind emit `var(--surface)` rather than baking in
+   a resolved colour.
+   -------------------------------------------------------------------------- */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-focus: var(--focus);
+}
+
+/* Light commerce environment — the default everywhere. */
+:root,
+[data-surface='paper'] {
+  color-scheme: light;
+  --surface: var(--color-paper-200);
+  --surface-raised: var(--color-paper-50);
+  --surface-sunken: var(--color-paper-300);
+  --fg: var(--color-stone-900);
+  --fg-muted: var(--color-stone-700);
+  --fg-subtle: var(--color-stone-600);
+  --line: rgb(27 29 26 / 0.12);
+  --line-strong: rgb(27 29 26 / 0.26);
+  --accent: var(--color-sage-900);
+  --accent-fg: var(--color-paper-50);
+  --accent-soft: var(--color-sage-100);
+  --focus: var(--color-sage-700);
+}
+
+/* Dark editorial environment — heroes, campaigns, night-routine stories. */
+[data-surface='ink'] {
+  color-scheme: dark;
+  --surface: var(--color-ink-900);
+  --surface-raised: var(--color-ink-800);
+  --surface-sunken: var(--color-ink-950);
+  --fg: var(--color-paper-200);
+  --fg-muted: rgb(243 239 231 / 0.66);
+  --fg-subtle: rgb(243 239 231 / 0.44);
+  --line: rgb(243 239 231 / 0.14);
+  --line-strong: rgb(243 239 231 / 0.32);
+  --accent: var(--color-paper-200);
+  --accent-fg: var(--color-ink-900);
+  --accent-soft: rgb(243 239 231 / 0.1);
+  --focus: var(--color-sage-300);
+}
+
+/* --------------------------------------------------------------------------
+   BASE
+   -------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    /* Anchored sections must not hide under the sticky header. */
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Display serif is set at one weight everywhere. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Keyboard focus is always visible and always the same shape.
+     `:focus-visible` keeps it off mouse clicks. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  /* Remove the default focus ring only where we have replaced it. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--color-sage-300);
+    color: var(--color-ink-900);
+  }
+
+  /* Number inputs: no spinners in commerce quantity fields. */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  /* Native dialog backdrop — used by the modal and drawer primitives. */
+  dialog::backdrop {
+    background: rgb(8 10 9 / 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  dialog {
+    max-width: 100vw;
+    max-height: 100dvh;
+  }
+
+  /* Native <dialog> enter/exit transitions.
+     `allow-discrete` lets `display` and the top-layer participate in the
+     transition, and `@starting-style` supplies the "before open" values. This
+     is the whole animation — no JS timers, no exit-state bookkeeping. */
+  .nl-dialog {
+    opacity: 0;
+    transition:
+      opacity var(--duration-standard) var(--ease-standard),
+      translate var(--duration-standard) var(--ease-entrance),
+      scale var(--duration-standard) var(--ease-entrance),
+      overlay var(--duration-standard) allow-discrete,
+      display var(--duration-standard) allow-discrete;
+  }
+  .nl-dialog[open] {
+    opacity: 1;
+    translate: none;
+    scale: 1;
+  }
+
+  .nl-dialog--center {
+    margin: auto;
+    scale: 0.98;
+  }
+  .nl-dialog--right {
+    margin: 0 0 0 auto;
+    translate: 2rem 0;
+  }
+  .nl-dialog--left {
+    margin: 0 auto 0 0;
+    translate: -2rem 0;
+  }
+  .nl-dialog--bottom {
+    margin: auto auto 0 auto;
+    translate: 0 2rem;
+  }
+
+  @starting-style {
+    .nl-dialog[open] {
+      opacity: 0;
+    }
+    .nl-dialog--center[open] {
+      scale: 0.98;
+    }
+    .nl-dialog--right[open] {
+      translate: 2rem 0;
+    }
+    .nl-dialog--left[open] {
+      translate: -2rem 0;
+    }
+    .nl-dialog--bottom[open] {
+      translate: 0 2rem;
+    }
+  }
+
+  dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--duration-standard) var(--ease-standard),
+      overlay var(--duration-standard) allow-discrete,
+      display var(--duration-standard) allow-discrete;
+  }
+  dialog[open]::backdrop {
+    opacity: 1;
+  }
+  @starting-style {
+    dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* Respect the OS motion preference: no parallax, no reveals, no scale. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   UTILITIES
+   Small, reusable, and named after intent — not appearance.
+   -------------------------------------------------------------------------- */
+@layer utilities {
+  /* Page gutter. One rule so every section aligns to the same optical edge. */
+  .page-x {
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 40rem) {
+    .page-x {
+      padding-inline: 2.5rem;
+    }
+  }
+  @media (min-width: 80rem) {
+    .page-x {
+      padding-inline: 4rem;
+    }
+  }
+
+  /* Vertical rhythm between major sections. Generous by design. */
+  .section-y {
+    padding-block: 4.5rem;
+  }
+  @media (min-width: 48rem) {
+    .section-y {
+      padding-block: 7rem;
+    }
+  }
+  @media (min-width: 80rem) {
+    .section-y {
+      padding-block: 9rem;
+    }
+  }
+
+  /* Uppercase micro-label used for eyebrows, section kickers and meta. */
+  .eyebrow {
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  /* Link that grows an underline from the left on hover. Used site-wide
+     instead of colour changes, which would break on ink surfaces. */
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    transition: background-size var(--duration-standard) var(--ease-standard);
+    padding-bottom: 1px;
+  }
+  .link-underline:hover,
+  .link-underline:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  /* Permanently underlined link that retracts on hover — inverse emphasis. */
+  .link-retract {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 100% 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    transition: background-size var(--duration-standard) var(--ease-standard);
+    padding-bottom: 1px;
+  }
+  .link-retract:hover,
+  .link-retract:focus-visible {
+    background-size: 0% 1px;
+  }
+
+  /* Accessible visually-hidden text that still reads to screen readers. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Locks the page behind an open drawer/modal without layout shift. */
+  .scroll-locked {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ANIMATION
+   -------------------------------------------------------------------------- */
+@keyframes nl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nl-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nl-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes nl-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Shimmer for skeletons — a slow sweep, not a pulsing flash. */
+@keyframes nl-shimmer {
+  from {
+    background-position: -160% 0;
+  }
+  to {
+    background-position: 260% 0;
+  }
+}
+
+@theme {
+  --animate-fade-up: nl-fade-up var(--duration-editorial) var(--ease-entrance)
+    both;
+  --animate-fade-in: nl-fade-in var(--duration-standard) var(--ease-entrance)
+    both;
+  --animate-slide-in-right: nl-slide-in-right var(--duration-standard)
+    var(--ease-entrance) both;
+  --animate-slide-down: nl-slide-down var(--duration-micro) var(--ease-entrance)
+    both;
+  --animate-shimmer: nl-shimmer 1.8s linear infinite;
+}

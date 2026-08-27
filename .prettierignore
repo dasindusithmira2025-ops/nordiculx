@@ -1,0 +1,12 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+src/lib/db/migrations
+package-lock.json
+*.md
+migration/legacy-nordic-lux/archive
+
+# Scratch directory — build artefacts, not source.
+.tmp

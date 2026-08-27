@@ -1,0 +1,424 @@
+import 'server-only';
+import { cache } from 'react';
+import { and, asc, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { db } from '@/lib/db';
+import {
+  announcements,
+  articleProducts,
+  articles,
+  articleTopics,
+  brands,
+  campaigns,
+  categories,
+  collections,
+  concerns,
+  faqs,
+  homepageSections,
+  navigationItems,
+  pages,
+} from '@/lib/db/schema';
+
+/**
+ * Taxonomy, navigation and content queries.
+ *
+ * Everything here is wrapped in React `cache()`: the header, footer and page
+ * body all need navigation, and without deduping a single render would issue
+ * the same query three times.
+ */
+
+/**
+ * A record is live when it is published AND inside its schedule window.
+ *
+ * Typed against `AnyPgColumn` so the same helper serves campaigns, homepage
+ * sections and announcements — three tables with identical scheduling
+ * semantics and, before this, three chances to get the comparison backwards.
+ */
+function withinWindow(startsAt: AnyPgColumn, endsAt: AnyPgColumn) {
+  const now = new Date();
+  return and(
+    or(isNull(startsAt), lte(startsAt, now)),
+    or(isNull(endsAt), gt(endsAt, now)),
+  );
+}
+
+/* --- brands --------------------------------------------------------------- */
+
+export const getBrands = cache(async () => {
+  return db
+    .select({
+      id: brands.id,
+      name: brands.name,
+      slug: brands.slug,
+      tagline: brands.tagline,
+      description: brands.description,
+      originCountry: brands.originCountry,
+      heroImageUrl: brands.heroImageUrl,
+      featured: brands.featured,
+      // The outer column is written literally as `brands.id`, NOT interpolated
+      // as ${brands.id}. Drizzle renders an interpolated column unqualified
+      // ("id") when the outer query has a single table, and inside a subquery
+      // that introduces `products p` the bare "id" silently resolves to
+      // products.id — matching nothing and returning 0 with no error.
+      productCount: sql<number>`(
+        SELECT COUNT(*)::int FROM products p
+        WHERE p.brand_id = brands.id
+          AND p.status = 'published' AND p.deleted_at IS NULL
+      )`,
+    })
+    .from(brands)
+    .where(eq(brands.status, 'published'))
+    .orderBy(asc(brands.name));
+});
+
+export const getBrandBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(brands)
+    .where(and(eq(brands.slug, slug), eq(brands.status, 'published')))
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+/* --- categories ----------------------------------------------------------- */
+
+export type CategoryNode = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  heroImageUrl: string | null;
+  children: CategoryNode[];
+};
+
+export const getCategoryTree = cache(async (): Promise<CategoryNode[]> => {
+  const rows = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+      description: categories.description,
+      heroImageUrl: categories.heroImageUrl,
+      parentId: categories.parentId,
+      sortOrder: categories.sortOrder,
+    })
+    .from(categories)
+    .where(eq(categories.status, 'published'))
+    .orderBy(asc(categories.sortOrder), asc(categories.name));
+
+  const byId = new Map<string, CategoryNode>(
+    rows.map((r) => [
+      r.id,
+      {
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        description: r.description,
+        heroImageUrl: r.heroImageUrl,
+        children: [],
+      },
+    ]),
+  );
+
+  const roots: CategoryNode[] = [];
+  for (const row of rows) {
+    const node = byId.get(row.id)!;
+    if (row.parentId) {
+      byId.get(row.parentId)?.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+});
+
+export const getCategoryBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(categories)
+    .where(and(eq(categories.slug, slug), eq(categories.status, 'published')))
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+/* --- concerns and collections --------------------------------------------- */
+
+export const getConcerns = cache(async () => {
+  return db
+    .select({
+      id: concerns.id,
+      name: concerns.name,
+      slug: concerns.slug,
+      description: concerns.description,
+      guidance: concerns.guidance,
+      imageUrl: concerns.imageUrl,
+      // Literal `concerns.id`, not ${concerns.id} — see the note in getBrands.
+      productCount: sql<number>`(
+        SELECT COUNT(*)::int FROM product_concerns pc
+        JOIN products p ON p.id = pc.product_id
+        WHERE pc.concern_id = concerns.id
+          AND p.status = 'published' AND p.deleted_at IS NULL
+      )`,
+    })
+    .from(concerns)
+    .where(eq(concerns.status, 'published'))
+    .orderBy(asc(concerns.sortOrder));
+});
+
+export const getConcernBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(concerns)
+    .where(and(eq(concerns.slug, slug), eq(concerns.status, 'published')))
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+export const getCollections = cache(async () => {
+  return db
+    .select()
+    .from(collections)
+    .where(eq(collections.status, 'published'))
+    .orderBy(asc(collections.sortOrder));
+});
+
+export const getCollectionBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(collections)
+    .where(and(eq(collections.slug, slug), eq(collections.status, 'published')))
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+/* --- navigation ----------------------------------------------------------- */
+
+export type NavItem = {
+  id: string;
+  label: string;
+  href: string;
+  badge: string | null;
+  columnGroup: string | null;
+  children: NavItem[];
+};
+
+const buildNav = (
+  rows: {
+    id: string;
+    label: string;
+    href: string;
+    badge: string | null;
+    columnGroup: string | null;
+    parentId: string | null;
+  }[],
+): NavItem[] => {
+  const byId = new Map<string, NavItem>(
+    rows.map((r) => [
+      r.id,
+      {
+        id: r.id,
+        label: r.label,
+        href: r.href,
+        badge: r.badge,
+        columnGroup: r.columnGroup,
+        children: [],
+      },
+    ]),
+  );
+  const roots: NavItem[] = [];
+  for (const row of rows) {
+    const node = byId.get(row.id)!;
+    if (row.parentId) byId.get(row.parentId)?.children.push(node);
+    else roots.push(node);
+  }
+  return roots;
+};
+
+export const getNavigation = cache(
+  async (location: 'header' | 'footer' | 'mobile' = 'header') => {
+    const rows = await db
+      .select({
+        id: navigationItems.id,
+        label: navigationItems.label,
+        href: navigationItems.href,
+        badge: navigationItems.badge,
+        columnGroup: navigationItems.columnGroup,
+        parentId: navigationItems.parentId,
+      })
+      .from(navigationItems)
+      .where(
+        and(
+          eq(navigationItems.location, location),
+          eq(navigationItems.enabled, true),
+        ),
+      )
+      .orderBy(asc(navigationItems.sortOrder));
+    return buildNav(rows);
+  },
+);
+
+export const getAnnouncements = cache(async () => {
+  return db
+    .select({
+      id: announcements.id,
+      message: announcements.message,
+      href: announcements.href,
+    })
+    .from(announcements)
+    .where(
+      and(
+        eq(announcements.enabled, true),
+        withinWindow(announcements.startsAt, announcements.endsAt),
+      ),
+    )
+    .orderBy(asc(announcements.sortOrder));
+});
+
+/* --- homepage ------------------------------------------------------------- */
+
+export const getHomepageSections = cache(async () => {
+  return db
+    .select()
+    .from(homepageSections)
+    .where(
+      and(
+        eq(homepageSections.enabled, true),
+        withinWindow(homepageSections.startsAt, homepageSections.endsAt),
+      ),
+    )
+    .orderBy(asc(homepageSections.sortOrder));
+});
+
+/* --- editorial ------------------------------------------------------------ */
+
+export const getArticles = cache(
+  async (
+    options: {
+      limit?: number;
+      topicSlug?: string;
+      featuredOnly?: boolean;
+    } = {},
+  ) => {
+    const conditions = [
+      eq(articles.status, 'published'),
+      lte(articles.publishedAt, new Date()),
+    ];
+    if (options.featuredOnly) conditions.push(eq(articles.featured, true));
+
+    const query = db
+      .select({
+        id: articles.id,
+        title: articles.title,
+        slug: articles.slug,
+        excerpt: articles.excerpt,
+        heroImageUrl: articles.heroImageUrl,
+        heroImageAlt: articles.heroImageAlt,
+        heroDark: articles.heroDark,
+        readingMinutes: articles.readingMinutes,
+        publishedAt: articles.publishedAt,
+        topicName: articleTopics.name,
+        topicSlug: articleTopics.slug,
+      })
+      .from(articles)
+      .leftJoin(articleTopics, eq(articleTopics.id, articles.topicId))
+      .where(
+        options.topicSlug
+          ? and(...conditions, eq(articleTopics.slug, options.topicSlug))
+          : and(...conditions),
+      )
+      .orderBy(desc(articles.publishedAt));
+
+    return options.limit ? query.limit(options.limit) : query;
+  },
+);
+
+export const getArticleBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select({
+      article: articles,
+      topicName: articleTopics.name,
+      topicSlug: articleTopics.slug,
+    })
+    .from(articles)
+    .leftJoin(articleTopics, eq(articleTopics.id, articles.topicId))
+    .where(
+      and(
+        eq(articles.slug, slug),
+        eq(articles.status, 'published'),
+        lte(articles.publishedAt, new Date()),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+export const getArticleTopics = cache(async () => {
+  return db.select().from(articleTopics).orderBy(asc(articleTopics.sortOrder));
+});
+
+/**
+ * Product ids explicitly attached to an article ("Shop the story"), in the
+ * editor's order.
+ *
+ * Returns ids rather than products so the caller can hand them to
+ * `getProductsByIds`, which already resolves prices, stock and imagery in one
+ * statement — there is no second product-card query to keep in sync.
+ */
+export const getArticleProductIds = cache(async (articleId: string) => {
+  const rows = await db
+    .select({ productId: articleProducts.productId })
+    .from(articleProducts)
+    .where(eq(articleProducts.articleId, articleId))
+    .orderBy(asc(articleProducts.sortOrder));
+  return rows.map((r) => r.productId);
+});
+
+/* --- campaigns ------------------------------------------------------------ */
+
+/** Live campaigns only — the publish window is evaluated at request time. */
+export const getLiveCampaigns = cache(async () => {
+  return db
+    .select()
+    .from(campaigns)
+    .where(
+      and(
+        eq(campaigns.status, 'published'),
+        withinWindow(campaigns.startsAt, campaigns.endsAt),
+      ),
+    )
+    .orderBy(desc(campaigns.startsAt));
+});
+
+export const getCampaignBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(campaigns)
+    .where(
+      and(
+        eq(campaigns.slug, slug),
+        eq(campaigns.status, 'published'),
+        withinWindow(campaigns.startsAt, campaigns.endsAt),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+/* --- static content ------------------------------------------------------- */
+
+export const getPageBySlug = cache(async (slug: string) => {
+  const rows = await db
+    .select()
+    .from(pages)
+    .where(and(eq(pages.slug, slug), eq(pages.status, 'published')))
+    .limit(1);
+  return rows[0] ?? null;
+});
+
+export const getFaqs = cache(async () => {
+  return db
+    .select()
+    .from(faqs)
+    .where(eq(faqs.enabled, true))
+    .orderBy(asc(faqs.category), asc(faqs.sortOrder));
+});
