@@ -56,6 +56,7 @@ Refused at startup in production (`src/lib/env.ts`):
 - `PAYMENT_DRIVER=mock` is rejected
 - `MAIL_DRIVER=log` is rejected
 - `PAYHERE_MERCHANT_SECRET` required when the PayHere driver is selected
+- Stripe API, publishable, and webhook keys required when Stripe is selected
 - `S3_BUCKET` required when storage is S3
 
 These are **startup** invariants and are skipped during `next build`, which
@@ -70,6 +71,14 @@ Set in `next.config.ts` for every response: `X-Content-Type-Options: nosniff`,
 a restrictive `Permissions-Policy`, and HSTS with preload.
 
 `poweredByHeader` is disabled.
+
+## Stripe
+
+Stripe secret and webhook keys stay in the server environment. Checkout is
+Stripe-hosted; Nordic Lux handles no PAN, CVC, or expiry. The webhook reads the
+exact raw body and verifies `stripe-signature` before validating the stored
+order id/reference, Checkout Session id, USD amount, and currency. Browser
+success/cancel query strings never change payment or order state.
 
 ## Rate limiting
 

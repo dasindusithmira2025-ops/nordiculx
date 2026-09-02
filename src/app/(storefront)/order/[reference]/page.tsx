@@ -9,7 +9,7 @@ import { OrderDetailView } from '@/components/commerce/order-detail';
 import { CheckIcon } from '@/components/ui/icons';
 
 export const metadata: Metadata = {
-  title: 'Order confirmed — Nordic Lux',
+  title: 'Your order — Nordic Lux',
   robots: { index: false, follow: false },
 };
 
@@ -24,10 +24,13 @@ export const metadata: Metadata = {
  */
 export default async function OrderConfirmationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ reference: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }) {
   const { reference } = await params;
+  const returnedFromCancellation = (await searchParams).payment === 'cancelled';
   const normalised = reference.toUpperCase();
 
   const user = await currentUser();
@@ -51,11 +54,33 @@ export default async function OrderConfirmationPage({
         >
           <CheckIcon width={22} height={22} />
         </span>
-        <h1 className="font-display text-display-lg text-fg mt-8">Thank you</h1>
+        <h1 className="font-display text-display-lg text-fg mt-8">
+          {order.paymentStatus === 'paid'
+            ? 'Thank you'
+            : order.status === 'cancelled'
+              ? 'Payment window expired'
+              : returnedFromCancellation
+                ? 'Payment cancelled'
+                : order.paymentStatus === 'failed'
+                  ? 'Payment not completed'
+                  : 'Payment processing'}
+        </h1>
         <p className="text-fg-muted mx-auto mt-5 max-w-prose text-base">
-          Your order is confirmed. We have emailed a copy to{' '}
-          <span className="text-fg">{order.email}</span>, and we will write
-          again the moment it is dispatched.
+          {order.paymentStatus === 'paid' ? (
+            <>
+              Your order is confirmed. We have emailed a copy to{' '}
+              <span className="text-fg">{order.email}</span>, and we will write
+              again the moment it is dispatched.
+            </>
+          ) : order.status === 'cancelled' ? (
+            'The payment session expired, so this order was cancelled and its reserved items were released.'
+          ) : returnedFromCancellation ? (
+            'No payment was confirmed from this browser return. Your reserved order remains pending until Stripe reports completion or the payment window expires.'
+          ) : order.paymentStatus === 'failed' ? (
+            'Stripe did not complete this payment. The order has not been confirmed.'
+          ) : (
+            'We are waiting for verified payment confirmation from Stripe. This page does not mark the order paid.'
+          )}
         </p>
       </div>
 

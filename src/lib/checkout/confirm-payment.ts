@@ -19,6 +19,7 @@ import { orders, payments, trackingEvents } from '@/lib/db/schema';
  */
 
 export type ConfirmPaymentInput = {
+  orderId?: string;
   reference: string;
   status: 'paid' | 'failed' | 'pending';
   provider: string;
@@ -26,11 +27,23 @@ export type ConfirmPaymentInput = {
   method?: string | null;
   /** Cents, as the provider reported it. Compared against the order total. */
   amount?: number | null;
+  currency?: string | null;
+  checkoutReference?: string | null;
+  eventId?: string | null;
 };
 
 export type ConfirmPaymentResult =
   | { ok: true; orderId: string; changed: boolean }
-  | { ok: false; reason: 'not_found' | 'amount_mismatch' };
+  | {
+      ok: false;
+      reason:
+        | 'not_found'
+        | 'order_mismatch'
+        | 'amount_mismatch'
+        | 'currency_mismatch'
+        | 'provider_mismatch'
+        | 'checkout_mismatch';
+    };
 
 export async function confirmPayment(
   input: ConfirmPaymentInput,
@@ -41,14 +54,41 @@ export async function confirmPayment(
         id: orders.id,
         grandTotal: orders.grandTotal,
         paymentStatus: orders.paymentStatus,
+        currency: orders.currency,
+        provider: payments.provider,
+        providerPayload: payments.providerPayload,
       })
       .from(orders)
+      .innerJoin(payments, eq(payments.orderId, orders.id))
       .where(eq(orders.reference, input.reference))
       .for('update')
       .limit(1);
 
     const order = rows[0];
     if (!order) return { ok: false as const, reason: 'not_found' as const };
+    if (input.orderId && input.orderId !== order.id) {
+      return { ok: false as const, reason: 'order_mismatch' as const };
+    }
+    if (
+      input.currency &&
+      input.currency.toUpperCase() !== order.currency.toUpperCase()
+    ) {
+      return { ok: false as const, reason: 'currency_mismatch' as const };
+    }
+    if (order.provider !== 'pending' && order.provider !== input.provider) {
+      return { ok: false as const, reason: 'provider_mismatch' as const };
+    }
+    const payload = order.providerPayload ?? {};
+    if (
+      input.checkoutReference &&
+      payload.checkoutSessionId &&
+      input.checkoutReference !== payload.checkoutSessionId
+    ) {
+      return { ok: false as const, reason: 'checkout_mismatch' as const };
+    }
+    if (input.eventId && payload.lastEventId === input.eventId) {
+      return { ok: true as const, orderId: order.id, changed: false };
+    }
 
     // An underpaid order must never be marked paid. Providers can be told the
     // wrong amount by a tampered checkout form, so the order's own total — which
@@ -62,7 +102,11 @@ export async function confirmPayment(
     }
 
     // Already settled: a retry, so there is nothing to do and nothing to log.
-    if (order.paymentStatus === 'paid' || order.paymentStatus === 'refunded') {
+    if (
+      order.paymentStatus === 'paid' ||
+      order.paymentStatus === 'refunded' ||
+      (order.paymentStatus === 'failed' && input.status === 'failed')
+    ) {
       return { ok: true as const, orderId: order.id, changed: false };
     }
 
@@ -78,6 +122,9 @@ export async function confirmPayment(
               ? 'failed'
               : 'pending',
         method: input.method ?? null,
+        providerPayload: input.eventId
+          ? { ...payload, lastEventId: input.eventId }
+          : payload,
         // Authorised and captured together: this provider settles in one step,
         // so there is no window where money is held but not taken.
         authorisedAt: input.status === 'paid' ? new Date() : null,
@@ -116,7 +163,12 @@ export async function confirmPayment(
         placedAt: sql`COALESCE(${orders.placedAt}, NOW())`,
         updatedAt: new Date(),
       })
-      .where(and(eq(orders.id, order.id), eq(orders.paymentStatus, 'pending')))
+      .where(
+        and(
+          eq(orders.id, order.id),
+          sql`${orders.paymentStatus} IN ('pending', 'failed')`,
+        ),
+      )
       .returning({ id: orders.id });
 
     if (!updated[0]) {

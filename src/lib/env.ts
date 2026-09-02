@@ -69,10 +69,13 @@ const serverSchema = z.object({
 
   // --- payments ----------------------------------------------------------
   // `mock` is a development-only provider. Production must name a real one.
-  PAYMENT_DRIVER: z.enum(['mock', 'payhere']).default('mock'),
+  PAYMENT_DRIVER: z.enum(['mock', 'payhere', 'stripe']).default('mock'),
   PAYHERE_MERCHANT_ID: z.string().optional(),
   PAYHERE_MERCHANT_SECRET: z.string().optional(),
   PAYHERE_SANDBOX: bool,
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 
   // --- integrations ------------------------------------------------------
   WHATSAPP_NUMBER: z.string().default('94776316512'),
@@ -86,12 +89,36 @@ type ServerEnv = z.infer<typeof serverSchema>;
  * the schema keeps local development runnable with almost no configuration.
  */
 function assertProductionInvariants(env: ServerEnv): string[] {
-  if (env.NODE_ENV !== 'production') return [];
   // `next build` evaluates server modules with NODE_ENV=production to collect
   // page data. Deployment credentials are not present then and are not needed
   // to compile — these are startup invariants, so skip them during the build.
   if (process.env.NEXT_PHASE === 'phase-production-build') return [];
   const errors: string[] = [];
+
+  if (env.PAYMENT_DRIVER === 'stripe') {
+    if (!env.STRIPE_SECRET_KEY) errors.push('STRIPE_SECRET_KEY is required');
+    if (!env.STRIPE_WEBHOOK_SECRET)
+      errors.push('STRIPE_WEBHOOK_SECRET is required');
+    if (!env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+      errors.push('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required');
+    if (
+      env.NODE_ENV !== 'production' &&
+      env.STRIPE_SECRET_KEY &&
+      !env.STRIPE_SECRET_KEY.startsWith('sk_test_') &&
+      !env.STRIPE_SECRET_KEY.startsWith('rk_test_')
+    ) {
+      errors.push('Stripe sandbox requires a test-mode API key');
+    }
+    if (
+      env.NODE_ENV !== 'production' &&
+      env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+      !env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_')
+    ) {
+      errors.push('Stripe sandbox requires a pk_test_ publishable key');
+    }
+  }
+
+  if (env.NODE_ENV !== 'production') return errors;
 
   if (env.APP_URL.startsWith('http://')) {
     errors.push('APP_URL must use https:// in production');
@@ -136,7 +163,7 @@ function load(): ServerEnv {
   const invariants = assertProductionInvariants(parsed.data);
   if (invariants.length > 0) {
     throw new Error(
-      `Invalid production environment:\n${invariants.map((e) => `  - ${e}`).join('\n')}`,
+      `Invalid environment configuration:\n${invariants.map((e) => `  - ${e}`).join('\n')}`,
     );
   }
 

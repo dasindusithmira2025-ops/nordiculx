@@ -7,9 +7,14 @@ import { z } from 'zod';
 import { getCart, clearCartCookie } from '@/lib/cart';
 import { placeOrder } from '@/lib/checkout/place-order';
 import { confirmPayment } from '@/lib/checkout/confirm-payment';
+import { recordPaymentStarted } from '@/lib/checkout/payment-state';
 import { trackEvent } from '@/lib/analytics';
 import { getOrderByReference } from '@/lib/orders';
-import { createPaymentIntent, paymentsAreMocked } from '@/lib/payments';
+import {
+  createPaymentIntent,
+  paymentProvider,
+  paymentsAreMocked,
+} from '@/lib/payments';
 import { sendMail } from '@/lib/mail';
 import {
   orderConfirmationEmail,
@@ -145,8 +150,18 @@ export async function submitCheckout(
     customerLastName:
       parsed.data.shipping.recipientName.split(' ').slice(1).join(' ') || '-',
     returnUrl: `${publicConfig.appUrl}/order/${placed.reference}`,
-    cancelUrl: `${publicConfig.appUrl}/checkout`,
-    notifyUrl: `${publicConfig.appUrl}/api/payments/notify`,
+    cancelUrl: `${publicConfig.appUrl}/order/${placed.reference}`,
+    notifyUrl:
+      paymentProvider === 'payhere'
+        ? `${publicConfig.appUrl}/api/payments/notify`
+        : `${publicConfig.appUrl}/api/payments/stripe/webhook`,
+  });
+
+  await recordPaymentStarted({
+    orderId: placed.orderId,
+    provider: intent.provider,
+    providerReference: intent.providerReference,
+    checkoutSessionId: intent.checkoutReference,
   });
 
   if (intent.status === 'authorised') {
@@ -196,7 +211,11 @@ export async function submitCheckout(
 
   const order = await getOrderByReference(placed.reference);
   if (order) {
-    await sendMail(orderConfirmationEmail(order));
+    // The order-confirmation message follows authoritative settlement. The
+    // guest-access message carries no claim that payment succeeded.
+    if (intent.status === 'authorised') {
+      await sendMail(orderConfirmationEmail(order));
+    }
     if (placed.guestToken) {
       await sendMail(
         guestOrderAccessEmail({
@@ -210,6 +229,7 @@ export async function submitCheckout(
 
   // A real provider needs the customer to go and pay; the mock driver is done.
   if (!paymentsAreMocked && intent.redirectUrl) {
+    if (intent.provider === 'stripe') redirect(intent.redirectUrl);
     redirect(`/checkout/pay?reference=${placed.reference}`);
   }
 

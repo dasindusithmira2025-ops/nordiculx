@@ -4,11 +4,7 @@ import { db, sql as connection } from '@/lib/db';
 import * as s from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken, hashToken, generateReference } from '@/lib/tokens';
-import {
-  generateProductMedia,
-  generateEditorialMedia,
-  vesselForStep,
-} from './generate-media';
+import { generateProductMedia, vesselForStep } from './generate-media';
 import * as data from './seed-data';
 
 /**
@@ -742,47 +738,6 @@ async function main() {
 
   /* --- editorial --------------------------------------------------------- */
   console.warn('Seeding editorial and campaigns…');
-  await generateEditorialMedia([
-    { key: 'hero-primary', dark: true, width: 2400, height: 1350 },
-    { key: 'hero-secondary', dark: false, width: 2000, height: 1200 },
-    { key: 'campaign-winter-quiet', dark: true, width: 2400, height: 1350 },
-    { key: 'routine-finder', dark: true, width: 1800, height: 1200 },
-    ...data.concerns.map((c) => ({
-      key: `concern-${c.slug}`,
-      dark: false,
-      width: 1200,
-      height: 900,
-    })),
-    ...demoBrands.map((b) => ({
-      key: `brand-${b.slug}`,
-      dark: false,
-      width: 2000,
-      height: 1000,
-    })),
-    ...data.categories.map((c) => ({
-      key: `category-${c.slug}`,
-      dark: false,
-      width: 1600,
-      height: 1000,
-    })),
-    ...collectionSpecs.map((c) => ({
-      key: `collection-${c.slug}`,
-      dark: true,
-      width: 2000,
-      height: 1200,
-    })),
-    { key: 'article-winter-routine', dark: false, width: 2000, height: 1200 },
-    { key: 'article-reading-inci', dark: false, width: 2000, height: 1200 },
-    { key: 'article-spf-humidity', dark: true, width: 2000, height: 1200 },
-    {
-      key: 'article-fragrance-layering',
-      dark: true,
-      width: 2000,
-      height: 1200,
-    },
-    { key: 'article-barrier-reset', dark: false, width: 2000, height: 1200 },
-    { key: 'article-gifting-guide', dark: false, width: 2000, height: 1200 },
-  ]);
 
   const topicRows = await db
     .insert(s.articleTopics)

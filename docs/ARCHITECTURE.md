@@ -71,6 +71,16 @@ amounts and refuses to mix currencies. The customer catalogue currently presents
 prices in USD; admin and storefront mutations keep using integer cents rather
 than floating-point arithmetic.
 
+## Payments
+
+Checkout reprices and reserves stock in one database transaction before any
+provider call. `src/lib/payments` isolates mock, PayHere, and Stripe drivers.
+Stripe uses hosted Checkout Sessions, so Nordic Lux never receives card data.
+The signed raw-body webhook is authoritative; browser returns only render the
+order's current database status. Payment confirmation is row-locked and
+idempotent, while an expired Stripe session cancels once and writes compensating
+reservation ledger movements.
+
 ## Overlays
 
 Modal and drawer are a native `<dialog>` opened with `showModal()` — the

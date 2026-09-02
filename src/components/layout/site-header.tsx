@@ -49,7 +49,10 @@ export function SiteHeader({
   const [openId, setOpenId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
-  const navRef = useRef<HTMLElement>(null);
+  // Ref lives on <header>, not <nav>: the mega panels render as siblings of
+  // the nav, so a nav-scoped ref would treat clicks inside a panel as
+  // outside clicks and close it before the link's click event fires.
+  const headerRef = useRef<HTMLElement>(null);
 
   // Navigating away must never leave a panel hanging open. Resetting during
   // render (rather than in an effect) collapses the panel in the same commit
@@ -67,7 +70,7 @@ export function SiteHeader({
       if (e.key === 'Escape') setOpenId(null);
     };
     const onPointerDown = (e: PointerEvent) => {
-      if (!navRef.current?.contains(e.target as Node)) setOpenId(null);
+      if (!headerRef.current?.contains(e.target as Node)) setOpenId(null);
     };
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointerDown);
@@ -88,9 +91,11 @@ export function SiteHeader({
 
   return (
     <>
-      <header className="border-line bg-surface/95 sticky top-0 z-40 border-b backdrop-blur-sm">
+      <header
+        ref={headerRef}
+        className="border-line bg-surface/95 sticky top-0 z-40 border-b backdrop-blur-sm"
+      >
         <nav
-          ref={navRef}
           aria-label="Primary"
           className="page-x mx-auto flex h-16 max-w-(--container-page) items-center gap-4 md:h-20"
           onMouseLeave={scheduleClose}

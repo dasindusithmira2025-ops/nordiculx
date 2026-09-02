@@ -1,11 +1,12 @@
 import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { env, isProduction } from '@/lib/env';
+import { createStripeCheckoutSession } from './stripe';
 
 /**
  * Payment drivers.
  *
- * Two implementations behind one shape:
+ * Three implementations behind one shape:
  *
  *   mock     development only. Authorises immediately so the whole order flow
  *            can be exercised without credentials. `src/lib/env.ts` refuses to
@@ -13,6 +14,8 @@ import { env, isProduction } from '@/lib/env';
  *   payhere  the real provider. The customer is redirected to PayHere, and the
  *            authoritative result arrives as a server-to-server notification —
  *            NOT from the browser being redirected back.
+ *   stripe   Stripe-hosted Checkout. Nordic Lux creates the amount from its
+ *            stored order and Stripe hosts every card-entry surface.
  *
  * The rule that matters: a payment is only ever marked paid from a verified
  * provider callback. The return URL the customer lands on is a convenience and
@@ -31,6 +34,8 @@ export type PaymentIntent = {
   /** Immediate status. Real providers stay `pending` until their callback. */
   status: 'pending' | 'authorised';
   providerReference: string | null;
+  /** Hosted-checkout id, distinct from the eventual payment transaction id. */
+  checkoutReference?: string | null;
 };
 
 export type PaymentRequest = {
@@ -95,6 +100,17 @@ export async function createPaymentIntent(
       redirectUrl: null,
       status: 'authorised',
       providerReference: `mock_${request.reference}`,
+    };
+  }
+
+  if (env.PAYMENT_DRIVER === 'stripe') {
+    const session = await createStripeCheckoutSession(request);
+    return {
+      provider: 'stripe',
+      redirectUrl: session.url,
+      status: 'pending',
+      providerReference: session.paymentIntentId,
+      checkoutReference: session.sessionId,
     };
   }
 
@@ -168,9 +184,12 @@ function statusFromCode(code: string): 'paid' | 'failed' | 'pending' {
 export function verifyNotification(
   params: Record<string, string>,
 ): NotificationResult {
-  if (env.PAYMENT_DRIVER === 'mock') {
+  if (env.PAYMENT_DRIVER !== 'payhere') {
     // The mock driver has no callback; anything arriving here is not ours.
-    return { valid: false, reason: 'mock driver accepts no notifications' };
+    return {
+      valid: false,
+      reason: `${env.PAYMENT_DRIVER} driver accepts no PayHere notifications`,
+    };
   }
 
   const secret = env.PAYHERE_MERCHANT_SECRET;
