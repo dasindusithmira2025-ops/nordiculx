@@ -174,6 +174,36 @@ export const WhatsAppIcon = (p: IconProps) => (
   </Svg>
 );
 
+/* --- social ---------------------------------------------------------------
+   Drawn on the same 24px grid at the same 1.25px stroke as the rest of the
+   set, rather than dropped in as the platforms' filled brand marks. A wall of
+   saturated brand colour in the footer would be the loudest thing on a page
+   whose whole argument is restraint — and these are links to us, not badges
+   for them. Each glyph keeps the silhouette that makes the platform
+   recognisable at 18px, which is all a footer icon has to do. */
+
+export const InstagramIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4.75" />
+    <circle cx="12" cy="12" r="3.85" />
+    <path d="M16.9 7.1v.01" />
+  </Svg>
+);
+
+export const FacebookIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4.75" />
+    <path d="M14.9 8.4h-1.1c-.9 0-1.4.5-1.4 1.4v1.5m0 0h-1.9m1.9 0h2.1m-2.1 0v5" />
+  </Svg>
+);
+
+export const TikTokIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M13.9 3.75v10.9a3.75 3.75 0 1 1-3.75-3.75c.3 0 .6.03.85.1" />
+    <path d="M13.9 3.75a4.6 4.6 0 0 0 4.35 4.15" />
+  </Svg>
+);
+
 export const InfoIcon = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="8.5" />

@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import type { ProductDetailView } from '@/lib/catalogue/types';
 import { useCart } from './cart-provider';
 import { Price, UnitPrice } from './price';
+import { ProductMedia } from './product-media';
 import { QuantityStepper } from './quantity-stepper';
 import { WishlistButton } from './wishlist-button';
 import { BackInStockForm } from './back-in-stock-form';
@@ -98,47 +98,34 @@ export function ProductDetail({
                   aria-current={i === activeIndex ? 'true' : undefined}
                   onClick={() => setPickedIndex(i)}
                   className={cn(
-                    'bg-surface-sunken relative block h-20 w-16 overflow-hidden border transition-colors',
+                    'block w-16 border transition-colors',
                     i === activeIndex
                       ? 'border-fg'
                       : 'hover:border-line-strong border-transparent',
                   )}
                 >
-                  <Image
-                    src={media.url}
-                    alt=""
-                    fill
-                    sizes="64px"
-                    className="object-contain p-1.5"
-                  />
+                  {/* Same stage as the main image, so the thumbnail strip is a
+                      true miniature of what selecting it will show. */}
+                  <ProductMedia src={media.url} alt="" sizes="64px" />
                 </button>
               </li>
             ))}
           </ul>
         ) : null}
 
-        <div className="bg-surface-sunken relative aspect-3/4 flex-1 overflow-hidden">
-          {active ? (
-            <Image
-              src={active.url}
-              alt={active.alt}
-              fill
-              priority
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="object-contain p-8"
-            />
-          ) : (
-            <div className="text-fg-subtle absolute inset-0 grid place-items-center text-xs">
-              No image
-            </div>
-          )}
-
+        <ProductMedia
+          src={active?.url}
+          alt={active?.alt ?? product.name}
+          priority
+          sizes="(min-width: 1024px) 45vw, 100vw"
+          className="flex-1"
+        >
           {product.onSale ? (
-            <div className="absolute top-4 left-4">
+            <span className="absolute top-4 left-4">
               <Badge tone="sale">−{product.discountPercent}%</Badge>
-            </div>
+            </span>
           ) : null}
-        </div>
+        </ProductMedia>
       </div>
 
       {/* ---------------------------------------------------------------- */}

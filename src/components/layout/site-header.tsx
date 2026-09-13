@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
@@ -35,6 +35,7 @@ export function SiteHeader({
   cartCount = 0,
   wishlistCount = 0,
   isSignedIn = false,
+  socialLinks,
   onOpenSearch,
   onOpenCart,
 }: {
@@ -42,6 +43,8 @@ export function SiteHeader({
   cartCount?: number;
   wishlistCount?: number;
   isSignedIn?: boolean;
+  /** Server-rendered profile links; see the storefront layout for the slot. */
+  socialLinks?: ReactNode;
   onOpenSearch?: () => void;
   onOpenCart?: () => void;
 }) {
@@ -100,11 +103,14 @@ export function SiteHeader({
           className="page-x mx-auto flex h-16 max-w-(--container-page) items-center gap-4 md:h-20"
           onMouseLeave={scheduleClose}
         >
-          {/* Mobile menu trigger */}
+          {/* Menu trigger: same left drawer on every breakpoint */}
           <IconButton
             label="Open menu"
-            className="-ml-2 lg:hidden"
-            onClick={() => setMobileOpen(true)}
+            className="-ml-2"
+            onClick={() => {
+              setOpenId(null);
+              setMobileOpen(true);
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -168,8 +174,22 @@ export function SiteHeader({
             })}
           </ul>
 
+          {/* Profile links are a narrow, desktop-only signature rather than
+              another mobile-header action. The divider makes them read as
+              company presence, separate from a customer's account and bag. */}
+          {socialLinks ? (
+            <div className="border-line ml-auto hidden border-l pl-3 xl:block">
+              {socialLinks}
+            </div>
+          ) : null}
+
           {/* Actions */}
-          <div className="ml-auto flex items-center gap-0.5">
+          <div
+            className={cn(
+              'flex items-center gap-0.5',
+              socialLinks ? 'ml-auto xl:ml-2' : 'ml-auto',
+            )}
+          >
             <IconButton label="Search" onClick={onOpenSearch}>
               <SearchIcon />
             </IconButton>
@@ -339,7 +359,7 @@ function MobileNav({
 
   return (
     <Drawer open={open} onClose={onClose} title="Menu" side="left">
-      <nav aria-label="Mobile" className="flex flex-col">
+      <nav aria-label="Menu" className="flex flex-col">
         {navigation.map((item) => {
           const hasChildren = item.children.length > 0;
           const isExpanded = expanded === item.id;

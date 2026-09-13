@@ -1,10 +1,10 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import type { ProductCardView } from '@/lib/catalogue/types';
 import { Badge } from '@/components/ui/display';
 import { Rating } from '@/components/ui/display';
 import { Price } from './price';
+import { ProductMedia } from './product-media';
 import { WishlistButton } from './wishlist-button';
 import { QuickAdd } from './quick-add';
 
@@ -50,41 +50,16 @@ export function ProductCard({
 
   return (
     <article className={cn('group relative flex flex-col', className)}>
-      <div className="bg-surface-sunken relative overflow-hidden">
+      <div className="relative overflow-hidden">
         <Link href={href} className="block focus-visible:outline-offset-[-2px]">
-          <div className="relative aspect-3/4">
-            {product.image ? (
-              <Image
-                src={product.image.url}
-                alt={product.image.alt}
-                fill
-                sizes={sizes}
-                priority={priority}
-                className={cn(
-                  'duration-editorial ease-standard object-contain p-4 transition-opacity',
-                  product.hoverImage && 'group-hover:opacity-0',
-                  !product.inStock && 'opacity-60',
-                )}
-              />
-            ) : (
-              <div className="text-fg-subtle absolute inset-0 grid place-items-center text-xs">
-                No image
-              </div>
-            )}
-
-            {/* Second shot, cross-faded beneath the first. */}
-            {product.hoverImage ? (
-              <Image
-                src={product.hoverImage.url}
-                alt=""
-                aria-hidden
-                fill
-                sizes={sizes}
-                loading="lazy"
-                className="duration-editorial ease-standard -z-0 object-contain p-4 opacity-0 transition-opacity group-hover:opacity-100"
-              />
-            ) : null}
-          </div>
+          <ProductMedia
+            src={product.image?.url}
+            alt={product.image?.alt ?? product.name}
+            hoverSrc={product.hoverImage?.url}
+            sizes={sizes}
+            priority={priority}
+            imageClassName={cn(!product.inStock && 'opacity-60')}
+          />
         </Link>
 
         {badge ? (

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from './cart-provider';
 import { Price } from './price';
@@ -13,6 +12,7 @@ import { AlertIcon, BagIcon, TrashIcon } from '@/components/ui/icons';
 import { formatMoney } from '@/lib/money';
 import { removeCartItem, updateCartItemQuantity } from '@/app/actions/cart';
 import { STANDARD_SHIPPING } from '@/lib/cart/pricing';
+import { ProductMedia } from './product-media';
 
 /**
  * Mini cart.
@@ -187,17 +187,13 @@ export function CartDrawer() {
               <Link
                 href={`/product/${line.slug}`}
                 onClick={closeCart}
-                className="bg-surface-sunken relative aspect-3/4 w-20 shrink-0 overflow-hidden"
+                className="block w-20 shrink-0"
               >
-                {line.imageUrl ? (
-                  <Image
-                    src={line.imageUrl}
-                    alt={line.productName}
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
-                ) : null}
+                <ProductMedia
+                  src={line.imageUrl}
+                  alt={line.productName}
+                  sizes="80px"
+                />
               </Link>
 
               <div className="min-w-0 flex-1">

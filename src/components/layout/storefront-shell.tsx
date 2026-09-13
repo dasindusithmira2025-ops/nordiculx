@@ -18,11 +18,14 @@ export function StorefrontShell({
   navigation,
   wishlistCount,
   isSignedIn,
+  socialLinks,
   children,
 }: {
   navigation: NavItem[];
   wishlistCount: number;
   isSignedIn: boolean;
+  /** A Server Component slot rendered inside the interactive header. */
+  socialLinks?: ReactNode;
   children: ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -35,6 +38,7 @@ export function StorefrontShell({
         cartCount={count}
         wishlistCount={wishlistCount}
         isSignedIn={isSignedIn}
+        socialLinks={socialLinks}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenCart={openCart}
       />

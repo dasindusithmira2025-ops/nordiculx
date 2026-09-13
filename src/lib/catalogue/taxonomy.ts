@@ -53,6 +53,7 @@ export const getBrands = cache(async () => {
       tagline: brands.tagline,
       description: brands.description,
       originCountry: brands.originCountry,
+      logoUrl: brands.logoUrl,
       heroImageUrl: brands.heroImageUrl,
       featured: brands.featured,
       // The outer column is written literally as `brands.id`, NOT interpolated

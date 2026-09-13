@@ -4,7 +4,11 @@ import { db, sql as connection } from '@/lib/db';
 import * as s from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken, hashToken, generateReference } from '@/lib/tokens';
-import { generateProductMedia, vesselForStep } from './generate-media';
+import {
+  generateBrandLogos,
+  generateProductMedia,
+  vesselForStep,
+} from './generate-media';
 import * as data from './seed-data';
 
 /**
@@ -67,6 +71,12 @@ async function main() {
 
   /* --- brands ------------------------------------------------------------ */
   console.warn('Seeding brands…');
+  // The wordmarks are drawn here rather than committed, for the same reason
+  // the product still-lifes are: they belong to the demo catalogue, and a run
+  // with `--no-demo-catalogue` should not leave assets for brands it skipped.
+  await generateBrandLogos(
+    demoBrands.map((b) => ({ key: b.slug, name: b.name, ...b.logo })),
+  );
   const brandRows =
     demoBrands.length === 0
       ? []
@@ -84,6 +94,7 @@ async function main() {
               featured: b.featured,
               sortOrder: i,
               heroImageUrl: `/media/editorial/brand-${b.slug}.webp`,
+              logoUrl: `/media/brands/${b.slug}.svg`,
               seoTitle: `${b.name} at Nordic Lux`,
               seoDescription: b.description,
             })),
@@ -1352,8 +1363,8 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       title: 'Fewer things,\nused properly.',
       description:
         'A considered edit of skincare, fragrance and pantry from small northern studios — chosen for how they are used, not for what they promise.',
-      ctaLabel: 'Explore the edit',
-      ctaHref: '/campaigns/the-quiet-season',
+      ctaLabel: 'Shop now',
+      ctaHref: '/shop',
       imageUrl: '/media/editorial/hero-primary.webp',
       imageAlt: 'The Quiet Season',
       dark: true,
@@ -1370,13 +1381,49 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       sortOrder: 1,
     },
     {
+      kind: 'campaign_banner',
+      eyebrow: 'Offers',
+      title: 'On at the moment',
+      description:
+        'Current offers across the house. Terms are on each offer page — we do not run a discount we cannot explain.',
+      config: {
+        tiles: [
+          {
+            imageUrl: '/media/editorial/offer-winter-bundle.webp',
+            imageAlt: 'The Winter Edit bundle offer',
+            eyebrow: 'Save 20%',
+            title: 'The Winter Edit bundle',
+            ctaLabel: 'Shop the bundle',
+            href: '/collection/the-winter-edit',
+          },
+          {
+            imageUrl: '/media/editorial/offer-free-delivery.webp',
+            imageAlt: 'Complimentary island-wide delivery over $100',
+            eyebrow: 'Over $100',
+            title: 'Complimentary delivery',
+            ctaLabel: 'Start shopping',
+            href: '/shop',
+          },
+          {
+            imageUrl: '/media/editorial/offer-gift-with-purchase.webp',
+            imageAlt: 'Gift with purchase on The Quiet Season',
+            eyebrow: 'While stocks last',
+            title: 'Gift with purchase',
+            ctaLabel: 'See the campaign',
+            href: '/campaigns/the-quiet-season',
+          },
+        ],
+      },
+      sortOrder: 2,
+    },
+    {
       kind: 'concern_grid',
       eyebrow: 'Shop by concern',
       title: 'Start with what your skin is doing',
       description:
         'Grouped by how products are typically used, not by claims about results.',
       config: { limit: 6 },
-      sortOrder: 2,
+      sortOrder: 3,
     },
     {
       kind: 'collection_spotlight',
@@ -1393,7 +1440,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
         collectionId: collectionBySlug.get('the-winter-edit'),
         limit: 4,
       },
-      sortOrder: 3,
+      sortOrder: 4,
     },
     {
       kind: 'featured_products',
@@ -1402,7 +1449,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       ctaLabel: 'Shop all',
       ctaHref: '/shop',
       config: { limit: 8, filter: 'featured' },
-      sortOrder: 4,
+      sortOrder: 5,
     },
     {
       kind: 'routine_finder_promo',
@@ -1415,7 +1462,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       imageUrl: '/media/editorial/routine-finder.webp',
       imageAlt: 'Routine Finder',
       dark: true,
-      sortOrder: 5,
+      sortOrder: 6,
     },
     {
       kind: 'brand_marquee',
@@ -1425,7 +1472,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       title: 'Chosen, not collected',
       ctaLabel: 'All brands',
       ctaHref: '/brands',
-      sortOrder: 6,
+      sortOrder: 7,
     },
     {
       kind: 'article_row',
@@ -1436,12 +1483,12 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       ctaLabel: 'All articles',
       ctaHref: '/edit',
       config: { limit: 3 },
-      sortOrder: 7,
+      sortOrder: 8,
     },
     {
       kind: 'assurance_row',
       title: 'How we work',
-      sortOrder: 8,
+      sortOrder: 9,
     },
     {
       kind: 'newsletter',
@@ -1449,7 +1496,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       title: 'Occasional letters',
       description:
         'New arrivals, restocks and the occasional piece of writing. Roughly twice a month, and easy to leave.',
-      sortOrder: 9,
+      sortOrder: 10,
     },
   ]);
 }

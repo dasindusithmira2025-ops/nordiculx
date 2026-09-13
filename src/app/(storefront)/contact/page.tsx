@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { currentUser } from '@/lib/auth';
 import { whatsappGeneralLink } from '@/lib/whatsapp';
 import { PageHeader } from '@/components/layout/page-header';
+import { SocialLinks } from '@/components/layout/social-links';
 import { ContactForm } from '@/components/support/contact-form';
 import { ChatIcon, TruckIcon, WhatsAppIcon } from '@/components/ui/icons';
 
@@ -101,6 +102,8 @@ export default async function ContactPage() {
                 </li>
               </ul>
             </div>
+
+            <SocialLinks label="Follow" className="border-line border-t pt-8" />
 
             <div className="border-line border-t pt-8">
               <h2 className="eyebrow text-fg-subtle mb-4">Before you write</h2>

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import type { ProductCardView } from '@/lib/catalogue/types';
+import { BrandLogo } from '@/components/catalogue/brand-logo';
 import { ProductCard } from '@/components/commerce/product-card';
 import { ButtonLink } from '@/components/ui/button';
 import { SectionHeading } from '@/components/ui/display';
@@ -93,6 +94,7 @@ export function ConcernGrid({
     slug: string;
     name: string;
     description: string | null;
+    imageUrl: string | null;
     productCount: number;
   }[];
 }) {
@@ -112,34 +114,58 @@ export function ConcernGrid({
           }
         />
 
-        {/* A text-led grid, not image tiles: the concern is the message, and a
-            stock photo of a face would be a claim we are not making. */}
+        {/* Still the hairline-divided grid, not a row of rounded tiles: cells
+            are separated by a 1px gap over the rule colour, and the image sits
+            flush inside its cell rather than in a card of its own.
+
+            The imagery is the editorial concern set already in the media
+            library (`/media/editorial/concern-*`) — still lifes that carry the
+            mood: linen over cracked earth for dryness, a droplet on stone for
+            dehydration. Deliberately never a face or a close-up of skin. Those
+            would read as a photograph of a condition, and Nordic Lux does not
+            make claims about conditions. */}
         <ul className="border-line bg-line mt-12 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-3">
           {concerns.map((concern) => (
             <li key={concern.slug} className="bg-surface">
               <Link
                 href={`/concern/${concern.slug}`}
-                className="group hover:bg-surface-raised flex h-full flex-col justify-between gap-8 p-8 transition-colors"
+                className="group hover:bg-surface-raised flex h-full flex-col transition-colors"
               >
-                <div>
-                  <h3 className="font-display text-display-sm">
-                    {concern.name}
-                  </h3>
-                  {concern.description ? (
-                    <p className="text-fg-muted mt-3 text-sm">
-                      {concern.description}
-                    </p>
-                  ) : null}
+                {/* A concern with no image keeps the original text-only cell
+                    rather than opening with an empty grey band. */}
+                {concern.imageUrl ? (
+                  <div className="bg-surface-sunken relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={concern.imageUrl}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      className="duration-editorial ease-standard object-cover transition-transform group-hover:scale-[1.02]"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="flex flex-1 flex-col justify-between gap-8 p-8">
+                  <div>
+                    <h3 className="font-display text-display-sm">
+                      {concern.name}
+                    </h3>
+                    {concern.description ? (
+                      <p className="text-fg-muted mt-3 text-sm">
+                        {concern.description}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="eyebrow text-fg-subtle flex items-center justify-between">
+                    {concern.productCount}{' '}
+                    {concern.productCount === 1 ? 'product' : 'products'}
+                    <ArrowRightIcon
+                      width={16}
+                      height={16}
+                      className="duration-standard transition-transform group-hover:translate-x-1"
+                    />
+                  </span>
                 </div>
-                <span className="eyebrow text-fg-subtle flex items-center justify-between">
-                  {concern.productCount}{' '}
-                  {concern.productCount === 1 ? 'product' : 'products'}
-                  <ArrowRightIcon
-                    width={16}
-                    height={16}
-                    className="duration-standard transition-transform group-hover:translate-x-1"
-                  />
-                </span>
               </Link>
             </li>
           ))}
@@ -260,7 +286,12 @@ export function BrandMarquee({
   title?: string | null;
   ctaLabel?: string | null;
   ctaHref?: string | null;
-  brands: { slug: string; name: string; tagline: string | null }[];
+  brands: {
+    slug: string;
+    name: string;
+    tagline: string | null;
+    logoUrl: string | null;
+  }[];
 }) {
   if (brands.length === 0) return null;
 
@@ -278,17 +309,24 @@ export function BrandMarquee({
         }
       />
 
-      {/* Set as a typographic list rather than a logo wall — we do not hold
-          brand logo assets, and a row of placeholder boxes would look worse
-          than the names themselves. */}
+      {/* A logo wall held to one optical height, on the same hairline grid as
+          the rest of the page. The official assets are stored locally and
+          rendered in their own colours; the restraint is in the size of the
+          stage and the air around it, not in recolouring somebody else's
+          mark. A brand we hold no asset for keeps its name in the display
+          serif on the same stage, so the row still lines up. */}
       <ul className="border-line bg-line mt-12 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-4">
         {brands.map((brand) => (
           <li key={brand.slug} className="bg-surface">
             <Link
               href={`/brands/${brand.slug}`}
-              className="group hover:bg-surface-raised flex h-full flex-col gap-2 p-8 transition-colors"
+              className="group hover:bg-surface-raised flex h-full flex-col gap-4 p-8 transition-colors"
             >
-              <span className="font-display text-fg text-xl">{brand.name}</span>
+              <BrandLogo
+                slug={brand.slug}
+                name={brand.name}
+                logoUrl={brand.logoUrl}
+              />
               {brand.tagline ? (
                 <span className="text-fg-subtle text-xs">{brand.tagline}</span>
               ) : null}
@@ -456,6 +494,112 @@ export function NewsletterSection({
         ) : null}
         <div className="mx-auto mt-10 max-w-md text-left">
           <NewsletterForm source="homepage" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/** One advertised offer. Authored in `homepage_sections.config.tiles`. */
+export type PromoTile = {
+  imageUrl: string;
+  imageAlt?: string | null;
+  /** Offer terms, e.g. "20% off" — set over the image. */
+  eyebrow?: string | null;
+  title?: string | null;
+  ctaLabel?: string | null;
+  href: string;
+};
+
+/**
+ * A row of advertised offers.
+ *
+ * Image-first: the artwork carries the offer and the text is a legible
+ * fallback over it, so merchandising can ship a campaign by swapping images
+ * without touching copy. Tiles come from the section's `config.tiles`, so the
+ * count and the links are editable without a deploy.
+ */
+export function PromoBanners({
+  eyebrow,
+  title,
+  description,
+  tiles,
+}: {
+  eyebrow?: string | null;
+  title?: string | null;
+  description?: string | null;
+  tiles: PromoTile[];
+}) {
+  if (tiles.length === 0) return null;
+
+  return (
+    <section className="border-line border-t">
+      <div className="page-x section-y mx-auto max-w-(--container-page)">
+        {title || eyebrow ? (
+          <SectionHeading
+            eyebrow={eyebrow ?? undefined}
+            title={title ?? ''}
+            description={description ?? undefined}
+          />
+        ) : null}
+
+        <div
+          className={cn(
+            'mt-12 grid gap-5 sm:gap-6',
+            tiles.length === 1
+              ? 'grid-cols-1'
+              : tiles.length % 2 === 0
+                ? 'sm:grid-cols-2'
+                : 'sm:grid-cols-2 lg:grid-cols-3',
+          )}
+        >
+          {tiles.map((tile) => (
+            <Link
+              key={tile.href + tile.imageUrl}
+              href={tile.href}
+              className="group bg-surface-sunken relative block aspect-16/9 overflow-hidden"
+            >
+              <Image
+                src={tile.imageUrl}
+                alt={tile.imageAlt ?? tile.title ?? ''}
+                fill
+                sizes={
+                  tiles.length === 1
+                    ? '100vw'
+                    : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'
+                }
+                className="duration-editorial ease-standard object-cover transition-transform group-hover:scale-[1.03]"
+              />
+
+              {/* Scrim only where the type sits, so the artwork stays readable. */}
+              <div
+                aria-hidden
+                className="from-ink-950/85 via-ink-950/30 absolute inset-0 bg-linear-to-t to-transparent"
+              />
+
+              <div
+                data-surface="ink"
+                className="text-fg absolute inset-x-0 bottom-0 p-6 sm:p-8"
+              >
+                {tile.eyebrow ? (
+                  <p className="eyebrow text-fg-muted">{tile.eyebrow}</p>
+                ) : null}
+                {tile.title ? (
+                  <h3 className="font-display text-display-sm mt-2">
+                    {tile.title}
+                  </h3>
+                ) : null}
+                {tile.ctaLabel ? (
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm">
+                    <span className="link-underline">{tile.ctaLabel}</span>
+                    <ArrowRightIcon width={16} height={16} />
+                  </span>
+                ) : null}
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

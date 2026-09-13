@@ -44,8 +44,8 @@ export default async function ConcernsPage() {
             {concerns.map((concern) => (
               <li key={concern.id}>
                 <Link href={`/concern/${concern.slug}`} className="group block">
-                  <div className="bg-surface-sunken relative aspect-[4/3] overflow-hidden">
-                    {concern.imageUrl ? (
+                  {concern.imageUrl ? (
+                    <div className="bg-surface-sunken relative aspect-[4/3] overflow-hidden">
                       <Image
                         src={concern.imageUrl}
                         alt=""
@@ -53,8 +53,8 @@ export default async function ConcernsPage() {
                         sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
                         className="duration-editorial ease-standard object-cover transition-transform group-hover:scale-[1.02]"
                       />
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                   <h2 className="font-display text-fg mt-5 text-2xl">
                     <span className="link-retract">{concern.name}</span>
                   </h2>

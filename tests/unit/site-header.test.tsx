@@ -53,4 +53,25 @@ describe('SiteHeader mega panel', () => {
         .getAttribute('aria-expanded'),
     ).toBe('true');
   });
+
+  it('places server-rendered social profile icons before customer actions', () => {
+    render(
+      <SiteHeader
+        navigation={navigation}
+        socialLinks={
+          <a
+            href="https://www.instagram.com/nordiclux"
+            aria-label="Nordic Lux on Instagram"
+          >
+            Instagram
+          </a>
+        }
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Nordic Lux on Instagram' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toBeTruthy();
+  });
 });

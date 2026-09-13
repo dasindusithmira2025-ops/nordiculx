@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useTransition } from 'react';
 import type { WishlistEntry } from '@/lib/wishlist';
@@ -10,6 +9,7 @@ import { formatMoney } from '@/lib/money';
 import { Button, ButtonLink, IconButton } from '@/components/ui/button';
 import { Badge } from '@/components/ui/display';
 import { TrashIcon } from '@/components/ui/icons';
+import { ProductMedia } from '@/components/commerce/product-media';
 
 /**
  * Wishlist grid.
@@ -29,17 +29,11 @@ export function WishlistGrid({ items }: { items: WishlistEntry[] }) {
 
         return (
           <li key={item.id}>
-            <div className="bg-surface-sunken relative aspect-[3/4] overflow-hidden">
-              {item.imageUrl ? (
-                <Image
-                  src={item.imageUrl}
-                  alt=""
-                  fill
-                  sizes="(min-width: 768px) 30vw, 50vw"
-                  className="object-cover"
-                />
-              ) : null}
-
+            <ProductMedia
+              src={item.imageUrl}
+              alt=""
+              sizes="(min-width: 768px) 30vw, 50vw"
+            >
               {!item.inStock ? (
                 <span className="absolute top-3 left-3">
                   <Badge tone="out">Out of stock</Badge>
@@ -61,7 +55,7 @@ export function WishlistGrid({ items }: { items: WishlistEntry[] }) {
                   <TrashIcon width={15} height={15} />
                 </IconButton>
               </span>
-            </div>
+            </ProductMedia>
 
             <div className="mt-4">
               <p className="eyebrow text-fg-subtle">{item.brandName}</p>

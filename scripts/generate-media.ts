@@ -436,6 +436,97 @@ export async function generateEditorialMedia(
   return requests.length;
 }
 
+/* --- brand wordmarks ------------------------------------------------------ */
+
+/** Stone-900 — the display ink the storefront sets its headlines in. */
+const LOGO_INK = '#1B1D1A';
+
+export type BrandLogoRequest = {
+  /** File name without extension. Must match `brands.slug`. */
+  key: string;
+  name: string;
+} & BrandLogoStyle;
+
+/** How a demo brand's name is set. Carried per brand in scripts/seed-data.ts. */
+export type BrandLogoStyle = {
+  /** Set in caps — reads as a house mark rather than a signature. */
+  caps?: boolean;
+  /** Extra tracking, in ems. Defaults suit each case. */
+  tracking?: number;
+  /** A small device that distinguishes one wordmark from the next. */
+  device?: 'rule' | 'dot';
+};
+
+/** One decimal is plenty of precision for a 40-unit box. */
+const round = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * A typographic wordmark for one demo brand.
+ *
+ * These are DEMO ASSETS, in the same sense as the still-lifes above: the eight
+ * seeded brands are fictional, so there is no official mark to hold and one is
+ * drawn instead. Real brands are the opposite case — their logos are fetched
+ * from their own sites, never drawn (scripts/fetch-brand-logos.ts).
+ *
+ * Every mark is 40 units tall with its letterforms on the same baseline, so a
+ * row of them lines up on the shared logo stage without needing a per-brand
+ * optical scale.
+ *
+ * The type is set with `<text>` in the display font's own system fallback
+ * chain rather than traced to paths: the file stays under a kilobyte and the
+ * name stays selectable text. What the chain cannot promise is identical
+ * advance widths on every platform, so the run is pinned with `textLength` and
+ * `lengthAdjust="spacing"` — the box width is then exact everywhere, and the
+ * slack lands in the tracking, which a wordmark wants anyway. Glyphs are never
+ * scaled, so nothing is ever distorted.
+ */
+export function brandLogoSvg(request: BrandLogoRequest): string {
+  const text = request.caps ? request.name.toUpperCase() : request.name;
+  const size = request.caps ? 22 : 27;
+  const tracking = (request.tracking ?? (request.caps ? 0.2 : 0.01)) * size;
+  const baseline = request.caps ? 28 : 29;
+
+  // A serif's advance averages a little over half the em. `tracking` is not
+  // set as an attribute — `textLength` would override it — it widens the box,
+  // and `lengthAdjust` then spends that slack on the gaps between letters. The
+  // estimate only has to be generous: under-estimating sets them touching.
+  const run = Math.round(
+    text.length * (size * (request.caps ? 0.58 : 0.52) + tracking),
+  );
+  const inset = request.device === 'dot' ? 22 : 0;
+
+  // Both devices are placed off the cap line, not off the box, so they hold
+  // the same relation to the letterforms whatever case the name is set in.
+  // The rule runs the full width of the mark: a short one sitting close to
+  // the caps reads as a stray overline rather than as part of the lockup.
+  const capTop = baseline - size * 0.7;
+  const dotY = baseline - size * 0.35;
+  const device =
+    request.device === 'rule'
+      ? `
+  <rect x="0" y="${round(capTop / 3)}" width="${inset + run}" height="1" fill="${LOGO_INK}"/>`
+      : request.device === 'dot'
+        ? `
+  <rect x="1" y="${round(dotY - 3.5)}" width="7" height="7" fill="${LOGO_INK}" transform="rotate(45 4.5 ${round(dotY)})"/>`
+        : '';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${inset + run}" height="40" viewBox="0 0 ${inset + run} 40" role="img" aria-label="${escapeXml(request.name)}">${device}
+  <text x="${inset}" y="${baseline}" textLength="${run}" lengthAdjust="spacing" fill="${LOGO_INK}" font-family="'Iowan Old Style',Georgia,'Times New Roman',serif" font-size="${size}">${escapeXml(text)}</text>
+</svg>
+`;
+}
+
+/** One wordmark per brand, written as SVG so it stays crisp at any stage size. */
+export async function generateBrandLogos(requests: BrandLogoRequest[]) {
+  const dir = join(OUT_ROOT, 'brands');
+  await mkdir(dir, { recursive: true });
+
+  for (const request of requests) {
+    await writeFile(join(dir, `${request.key}.svg`), brandLogoSvg(request));
+  }
+  return requests.length;
+}
+
 // Allow running standalone for a quick visual check of the generator itself.
 if (process.argv[1]?.endsWith('generate-media.ts')) {
   const shapes: VesselShape[] = [

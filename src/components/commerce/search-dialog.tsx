@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/cn';
@@ -10,6 +9,7 @@ import type { SearchResult, SearchResults } from '@/lib/catalogue/search';
 import { Skeleton } from '@/components/ui/display';
 import { IconButton } from '@/components/ui/button';
 import { CloseIcon, SearchIcon } from '@/components/ui/icons';
+import { ProductMedia } from './product-media';
 
 /**
  * Predictive search.
@@ -338,17 +338,12 @@ export function SearchDialog({
                         )}
                       >
                         {isProduct ? (
-                          <span className="bg-surface-sunken relative block aspect-3/4 w-12 shrink-0 overflow-hidden">
-                            {item.imageUrl ? (
-                              <Image
-                                src={item.imageUrl}
-                                alt=""
-                                fill
-                                sizes="48px"
-                                className="object-cover"
-                              />
-                            ) : null}
-                          </span>
+                          <ProductMedia
+                            src={item.imageUrl}
+                            alt=""
+                            sizes="48px"
+                            className="w-12 shrink-0"
+                          />
                         ) : (
                           <span className="eyebrow text-fg-subtle w-12 shrink-0">
                             {item.kind === 'article' ? 'Read' : item.kind}

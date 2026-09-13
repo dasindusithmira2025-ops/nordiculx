@@ -16,6 +16,16 @@ const bool = z
   .default('false')
   .transform((v) => v === 'true');
 
+/**
+ * An optional URL where an empty variable means "not configured".
+ * `.env.example` ships these keys blank so the shape is discoverable, and a
+ * blank value must not be a boot failure.
+ */
+const optionalUrl = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+  z.url().optional(),
+);
+
 const serverSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -80,6 +90,14 @@ const serverSchema = z.object({
   // --- integrations ------------------------------------------------------
   WHATSAPP_NUMBER: z.string().default('94776316512'),
   ANALYTICS_ENABLED: bool,
+
+  // --- social profiles ---------------------------------------------------
+  // Optional and deliberately un-defaulted: a profile that is not configured
+  // is not rendered. Guessing a handle would publish a link to somebody
+  // else's account, which is worse than showing no icon at all.
+  SOCIAL_INSTAGRAM_URL: optionalUrl,
+  SOCIAL_FACEBOOK_URL: optionalUrl,
+  SOCIAL_TIKTOK_URL: optionalUrl,
 });
 
 type ServerEnv = z.infer<typeof serverSchema>;

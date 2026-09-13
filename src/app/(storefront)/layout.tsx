@@ -3,7 +3,9 @@ import { getAnnouncements, getNavigation } from '@/lib/catalogue/taxonomy';
 import { getCartCount } from '@/lib/cart';
 import { currentUser } from '@/lib/auth';
 import { getWishlistCount } from '@/lib/wishlist';
+import { getSocialLinks } from '@/lib/social';
 import { AnnouncementBar } from '@/components/layout/announcement-bar';
+import { SocialLinks } from '@/components/layout/social-links';
 import { StorefrontShell } from '@/components/layout/storefront-shell';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { CartProvider } from '@/components/commerce/cart-provider';
@@ -28,6 +30,7 @@ export default async function StorefrontLayout({
 }: {
   children: ReactNode;
 }) {
+  const socialLinks = getSocialLinks();
   const [navigation, announcements, cartCount, user] = await Promise.all([
     getNavigation('header'),
     getAnnouncements(),
@@ -48,6 +51,16 @@ export default async function StorefrontLayout({
         navigation={navigation}
         wishlistCount={wishlistCount}
         isSignedIn={Boolean(user)}
+        socialLinks={
+          socialLinks.length > 0 ? (
+            <SocialLinks
+              links={socialLinks}
+              label={null}
+              size={16}
+              variant="header"
+            />
+          ) : null
+        }
       >
         {children}
       </StorefrontShell>

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getBrands } from '@/lib/catalogue/taxonomy';
 import { PageHeader } from '@/components/layout/page-header';
+import { BrandLogo } from '@/components/catalogue/brand-logo';
 import { EmptyState, SectionHeading } from '@/components/ui/display';
 import { ButtonLink } from '@/components/ui/button';
 
@@ -71,8 +72,13 @@ export default async function BrandsPage() {
                         {brand.originCountry}
                       </p>
                     ) : null}
-                    <h2 className="font-display text-fg mt-2 text-2xl">
-                      <span className="link-retract">{brand.name}</span>
+                    <h2 className="mt-3">
+                      <BrandLogo
+                        slug={brand.slug}
+                        name={brand.name}
+                        logoUrl={brand.logoUrl}
+                        stage={36}
+                      />
                     </h2>
                     {brand.tagline ? (
                       <p className="text-fg-muted mt-2 text-sm">
@@ -104,10 +110,17 @@ export default async function BrandsPage() {
                     href={`/brands/${brand.slug}`}
                     className="hover:bg-accent-soft group flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 px-1 py-6 transition-colors"
                   >
-                    <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                      <span className="font-display text-fg text-xl">
-                        {brand.name}
-                      </span>
+                    {/* The official logo stands in for the name here: it is
+                        set on the shared stage, so a 300px-wide wordmark and a
+                        stacked lockup still align down the column, and the
+                        name travels with it as the image's alt text. */}
+                    <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                      <BrandLogo
+                        slug={brand.slug}
+                        name={brand.name}
+                        logoUrl={brand.logoUrl}
+                        stage={32}
+                      />
                       {brand.tagline ? (
                         <span className="text-fg-muted text-sm">
                           {brand.tagline}

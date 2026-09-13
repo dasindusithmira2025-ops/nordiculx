@@ -22,9 +22,15 @@ export const DEMO_NOTICE =
 
 /* --- brands --------------------------------------------------------------- */
 
+/**
+ * How each demo brand's wordmark is set — see `generateBrandLogos` in
+ * scripts/generate-media.ts. These brands are fictional, so the mark is drawn
+ * rather than held; a real brand's logo is only ever its own published file.
+ */
 export const brands = [
   {
     slug: 'halvor-atelier',
+    logo: { tracking: 0.02 },
     name: 'Halvør Atelier',
     tagline: 'Considered formulation, Oslo',
     originCountry: 'Norway',
@@ -36,6 +42,7 @@ export const brands = [
   },
   {
     slug: 'sund-copenhagen',
+    logo: { caps: true, device: 'rule' as const },
     name: 'SUND Copenhagen',
     tagline: 'Minimal skincare, maximal restraint',
     originCountry: 'Denmark',
@@ -47,6 +54,7 @@ export const brands = [
   },
   {
     slug: 'bjork-and-linden',
+    logo: { device: 'dot' as const },
     name: 'Björk & Linden',
     tagline: 'Botanical apothecary, Stockholm',
     originCountry: 'Sweden',
@@ -57,6 +65,7 @@ export const brands = [
   },
   {
     slug: 'kvist',
+    logo: { caps: true, tracking: 0.42 },
     name: 'KVIST',
     tagline: 'Fragrance as landscape',
     originCountry: 'Norway',
@@ -67,6 +76,7 @@ export const brands = [
   },
   {
     slug: 'aurora-supply-co',
+    logo: { device: 'dot' as const, tracking: 0.03 },
     name: 'Aurora Supply Co.',
     tagline: 'Sun and daily protection',
     originCountry: 'Finland',
@@ -78,6 +88,7 @@ export const brands = [
   },
   {
     slug: 'nordkap-wellness',
+    logo: { caps: true },
     name: 'Nordkap Wellness',
     tagline: 'Rituals for the darker months',
     originCountry: 'Norway',
@@ -88,6 +99,7 @@ export const brands = [
   },
   {
     slug: 'saga-pantry',
+    logo: { device: 'rule' as const },
     name: 'Saga Pantry',
     tagline: 'Small-batch Nordic pantry',
     originCountry: 'Iceland',
@@ -98,6 +110,7 @@ export const brands = [
   },
   {
     slug: 'lume-studio',
+    logo: { caps: true, device: 'dot' as const },
     name: 'Lume Studio',
     tagline: 'Colour, quietly',
     originCountry: 'Denmark',

@@ -41,3 +41,6 @@ npm-debug.log*
 
 # Scratch directory
 .tmp/
+
+# agent tool scratch memory
+.paralith/

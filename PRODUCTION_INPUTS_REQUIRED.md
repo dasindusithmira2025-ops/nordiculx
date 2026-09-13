@@ -115,6 +115,27 @@ blocker; it is an operating routine.
 
 ---
 
+## 8. Social profile URLs
+
+**Nothing in this repository records a Nordic Lux social account** — not the
+database, not the configuration, not the archived legacy site. The footer and
+the contact page are wired to show them and will render nothing until they are
+supplied, because linking customers to a guessed handle sends them to somebody
+else's account.
+
+| Variable | Notes |
+| --- | --- |
+| `SOCIAL_INSTAGRAM_URL` | Full canonical profile URL |
+| `SOCIAL_FACEBOOK_URL` | Full canonical page URL |
+| `SOCIAL_TIKTOK_URL` | Full canonical profile URL |
+
+Set only the ones that exist. Each platform is independent: an unset variable
+means that icon is simply not rendered, and no code change is needed to add a
+platform later. The links are consumed in one place,
+`src/lib/social.ts`.
+
+---
+
 ## Known gaps that do not block launch
 
 These are real, deliberate, and safe to ship without:

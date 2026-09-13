@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getNavigation } from '@/lib/catalogue/taxonomy';
+import { SocialLinks } from './social-links';
 import { Wordmark } from './wordmark';
 
 /**
@@ -43,6 +44,9 @@ export async function SiteFooter() {
               </Link>
               .
             </p>
+
+            {/* Renders only the profiles that are actually configured. */}
+            <SocialLinks label="Follow" className="mt-10" />
           </div>
 
           {/* Link columns */}

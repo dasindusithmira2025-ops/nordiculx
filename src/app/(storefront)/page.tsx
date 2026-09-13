@@ -17,7 +17,9 @@ import {
   EditorialSplit,
   NewsletterSection,
   ProductRow,
+  PromoBanners,
 } from '@/components/home/sections';
+import type { PromoTile } from '@/components/home/sections';
 
 export const metadata: Metadata = {
   title: 'Nordic Lux — Curated beauty, wellness and pantry',
@@ -152,6 +154,20 @@ export default async function HomePage() {
                 reverse
               />
             );
+
+          case 'campaign_banner': {
+            const tiles =
+              (section.config as { tiles?: PromoTile[] }).tiles ?? [];
+            return (
+              <PromoBanners
+                key={section.id}
+                eyebrow={section.eyebrow}
+                title={section.title}
+                description={section.description}
+                tiles={tiles.filter((t) => t?.imageUrl && t?.href)}
+              />
+            );
+          }
 
           case 'brand_marquee':
             return (
