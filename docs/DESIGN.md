@@ -104,9 +104,10 @@ Social marks follow the same rule rather than arriving as the platforms'
 filled brand icons: a row of saturated logos in the footer would be the
 loudest thing on a page built on restraint, and these are links to us, not
 badges for them. Each glyph keeps the silhouette that reads at 18px.
-Profiles are configuration (`SOCIAL_*_URL`), and a platform with no configured
-URL renders nothing — the site never links to an account Nordic Lux does not
-own.
+Restraint comes from the line weight, not from hiding them: the footer,
+`/contact` and the mobile menu carry a labelled "Follow Nordic Lux" block of
+tap-sized, outlined buttons that invert on hover and focus. URLs are the
+client-supplied profiles in `src/lib/social.ts`, overridable via `SOCIAL_*_URL`.
 
 ## Menu navigation
 

@@ -9,40 +9,33 @@ const ICONS = {
 } as const;
 
 /**
- * Social profile row.
+ * Social profile links.
  *
- * Renders nothing at all when no profile is configured, which is deliberate:
- * an empty heading with a gap under it looks broken, and inventing a handle to
- * fill the space would link customers to an account we do not control.
+ * `feature` is the "Follow Nordic Lux" block used in the footer, on /contact
+ * and in the mobile menu: labelled, tap-sized buttons that are meant to be
+ * noticed. `header` is the compact icon group in the desktop header.
  *
- * The icons inherit the surface's foreground colour, so the same component
- * works in the ink footer and on the paper contact page without a variant.
+ * Colours come from surface tokens, so the same markup works on the ink
+ * footer and the paper pages without a colour variant. Hover and focus invert
+ * the button, which reads clearly on both.
  */
 export function SocialLinks({
   links = getSocialLinks(),
-  label = 'Follow',
   className,
-  size = 18,
-  variant = 'default',
+  variant = 'feature',
 }: {
   /** Server-resolved profiles. Supplying these avoids repeat configuration work. */
   links?: SocialLink[];
-  /** Rendered as an eyebrow above the row; pass null for icons only. */
-  label?: string | null;
   className?: string;
-  size?: number;
-  /** The header is deliberately quieter and more compact than a page section. */
-  variant?: 'default' | 'header';
+  variant?: 'feature' | 'header';
 }) {
   if (links.length === 0) return null;
 
-  const headerVariant = variant === 'header';
-
-  return (
-    <div className={className}>
-      {label ? <p className="eyebrow text-fg-subtle mb-4">{label}</p> : null}
+  if (variant === 'header') {
+    return (
       <ul
-        className={cn('flex items-center', headerVariant ? 'gap-0.5' : 'gap-2')}
+        aria-label="Follow Nordic Lux"
+        className={cn('flex items-center gap-1', className)}
       >
         {links.map((link) => {
           const Icon = ICONS[link.platform];
@@ -51,22 +44,54 @@ export function SocialLinks({
               <a
                 href={link.href}
                 target="_blank"
-                rel="noopener noreferrer me"
+                rel="noopener noreferrer"
                 aria-label={link.label}
                 title={link.label}
-                className={cn(
-                  headerVariant
-                    ? 'text-fg-subtle hover:bg-accent-soft hover:text-fg grid size-8 place-items-center'
-                    : 'border-line text-fg-muted hover:border-line-strong hover:text-fg grid h-10 w-10 place-items-center border',
-                  'duration-standard ease-standard transition-colors',
-                )}
+                className="text-fg-muted hover:bg-accent-soft hover:text-fg focus-visible:bg-accent-soft focus-visible:text-fg duration-standard ease-standard grid size-9 place-items-center rounded-full transition-colors"
               >
-                <Icon width={size} height={size} />
+                <Icon width={18} height={18} />
               </a>
             </li>
           );
         })}
       </ul>
-    </div>
+    );
+  }
+
+  return (
+    <section aria-label="Follow Nordic Lux" className={className}>
+      <p className="eyebrow text-fg-subtle">Social</p>
+      <h2 className="font-display text-fg mt-2 text-2xl leading-tight">
+        Follow Nordic Lux
+      </h2>
+      <p className="text-fg-muted mt-2 text-sm">
+        New arrivals, rituals and edits — @thenordiclux
+      </p>
+      <ul className="mt-6 grid gap-3">
+        {links.map((link) => {
+          const Icon = ICONS[link.platform];
+          return (
+            <li key={link.platform}>
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.label}
+                className="group border-line-strong text-fg hover:bg-fg hover:text-surface focus-visible:bg-fg focus-visible:text-surface duration-standard ease-standard flex min-h-14 items-center gap-4 border px-5 transition-colors"
+              >
+                <Icon width={24} height={24} className="shrink-0" />
+                <span className="text-base tracking-wide">{link.name}</span>
+                <span
+                  aria-hidden
+                  className="duration-standard ease-standard ml-auto text-lg transition-transform group-hover:translate-x-1 group-focus-visible:translate-x-1"
+                >
+                  ↗
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

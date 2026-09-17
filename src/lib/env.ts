@@ -92,9 +92,8 @@ const serverSchema = z.object({
   ANALYTICS_ENABLED: bool,
 
   // --- social profiles ---------------------------------------------------
-  // Optional and deliberately un-defaulted: a profile that is not configured
-  // is not rendered. Guessing a handle would publish a link to somebody
-  // else's account, which is worse than showing no icon at all.
+  // Optional overrides. The client-supplied profile URLs are the defaults in
+  // src/lib/social.ts.
   SOCIAL_INSTAGRAM_URL: optionalUrl,
   SOCIAL_FACEBOOK_URL: optionalUrl,
   SOCIAL_TIKTOK_URL: optionalUrl,

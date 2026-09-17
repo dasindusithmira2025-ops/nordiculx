@@ -36,6 +36,7 @@ export function SiteHeader({
   wishlistCount = 0,
   isSignedIn = false,
   socialLinks,
+  mobileSocialLinks,
   onOpenSearch,
   onOpenCart,
 }: {
@@ -45,6 +46,8 @@ export function SiteHeader({
   isSignedIn?: boolean;
   /** Server-rendered profile links; see the storefront layout for the slot. */
   socialLinks?: ReactNode;
+  /** Labelled social block rendered at the foot of the menu drawer. */
+  mobileSocialLinks?: ReactNode;
   onOpenSearch?: () => void;
   onOpenCart?: () => void;
 }) {
@@ -174,9 +177,9 @@ export function SiteHeader({
             })}
           </ul>
 
-          {/* Profile links are a narrow, desktop-only signature rather than
-              another mobile-header action. The divider makes them read as
-              company presence, separate from a customer's account and bag. */}
+          {/* Compact desktop signature; on smaller screens the labelled block
+              lives in the menu drawer instead. The divider separates company
+              presence from a customer's account and bag. */}
           {socialLinks ? (
             <div className="border-line ml-auto hidden border-l pl-3 xl:block">
               {socialLinks}
@@ -251,6 +254,7 @@ export function SiteHeader({
         onClose={() => setMobileOpen(false)}
         navigation={navigation}
         isSignedIn={isSignedIn}
+        socialLinks={mobileSocialLinks}
       />
     </>
   );
@@ -349,11 +353,13 @@ function MobileNav({
   onClose,
   navigation,
   isSignedIn,
+  socialLinks,
 }: {
   open: boolean;
   onClose: () => void;
   navigation: NavItem[];
   isSignedIn: boolean;
+  socialLinks?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -455,6 +461,8 @@ function MobileNav({
             Contact
           </Link>
         </div>
+
+        {socialLinks ? <div className="px-5 pb-10">{socialLinks}</div> : null}
       </nav>
     </Drawer>
   );

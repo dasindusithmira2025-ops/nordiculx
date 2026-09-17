@@ -117,25 +117,16 @@ blocker; it is an operating routine.
 
 ## 8. Social profile URLs
 
-Instagram is known and ships by default:
-**https://www.instagram.com/thenordiclux/** (`src/lib/social.ts`). It renders in
-the footer, on `/contact` and in the desktop header without any configuration.
-
-**Facebook and TikTok are still outstanding.** Neither URL appears anywhere in
-this repository — not the database, not the configuration, not the archived
-legacy site — so neither icon renders. They are not guessed, and they will not
-be: linking customers to an invented handle sends them to somebody else's
-account.
+**Supplied.** The client's exact Facebook, TikTok and Instagram URLs ship as
+defaults in `src/lib/social.ts`. They render as the "Follow Nordic Lux" block
+in the footer, on `/contact` and in the mobile menu, and as an icon group in
+the desktop header — no configuration needed.
 
 | Variable | Status | Notes |
 | --- | --- | --- |
-| `SOCIAL_INSTAGRAM_URL` | Optional | Overrides the default above |
-| `SOCIAL_FACEBOOK_URL` | **REQUIRED FROM CLIENT** | Full canonical page URL |
-| `SOCIAL_TIKTOK_URL` | **REQUIRED FROM CLIENT** | Full canonical profile URL |
-
-Set only the ones that exist. Each platform is independent: an unset variable
-means that icon is simply not rendered, and no code change is needed to add a
-platform later. The links are consumed in one place, `src/lib/social.ts`.
+| `SOCIAL_FACEBOOK_URL` | Optional | Overrides the supplied default |
+| `SOCIAL_TIKTOK_URL` | Optional | Overrides the supplied default |
+| `SOCIAL_INSTAGRAM_URL` | Optional | Overrides the supplied default |
 
 ---
 

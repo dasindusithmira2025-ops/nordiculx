@@ -49,6 +49,10 @@ export default async function ContactPage() {
           </div>
 
           <aside className="space-y-10">
+            {/* First in the aside so it is the first thing seen beside the
+                form, and directly under the form on mobile. */}
+            <SocialLinks className="border-line-strong border p-6" />
+
             <div>
               <h2 className="eyebrow text-fg-subtle mb-4">Other ways</h2>
               <ul className="space-y-5 text-sm">
@@ -102,8 +106,6 @@ export default async function ContactPage() {
                 </li>
               </ul>
             </div>
-
-            <SocialLinks label="Follow" className="border-line border-t pt-8" />
 
             <div className="border-line border-t pt-8">
               <h2 className="eyebrow text-fg-subtle mb-4">Before you write</h2>

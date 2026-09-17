@@ -51,16 +51,8 @@ export default async function StorefrontLayout({
         navigation={navigation}
         wishlistCount={wishlistCount}
         isSignedIn={Boolean(user)}
-        socialLinks={
-          socialLinks.length > 0 ? (
-            <SocialLinks
-              links={socialLinks}
-              label={null}
-              size={16}
-              variant="header"
-            />
-          ) : null
-        }
+        socialLinks={<SocialLinks links={socialLinks} variant="header" />}
+        mobileSocialLinks={<SocialLinks links={socialLinks} />}
       >
         {children}
       </StorefrontShell>

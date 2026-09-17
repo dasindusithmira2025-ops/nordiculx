@@ -19,6 +19,7 @@ export function StorefrontShell({
   wishlistCount,
   isSignedIn,
   socialLinks,
+  mobileSocialLinks,
   children,
 }: {
   navigation: NavItem[];
@@ -26,6 +27,8 @@ export function StorefrontShell({
   isSignedIn: boolean;
   /** A Server Component slot rendered inside the interactive header. */
   socialLinks?: ReactNode;
+  /** The labelled "Follow Nordic Lux" block shown in the mobile menu. */
+  mobileSocialLinks?: ReactNode;
   children: ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -39,6 +42,7 @@ export function StorefrontShell({
         wishlistCount={wishlistCount}
         isSignedIn={isSignedIn}
         socialLinks={socialLinks}
+        mobileSocialLinks={mobileSocialLinks}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenCart={openCart}
       />

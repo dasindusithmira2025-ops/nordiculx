@@ -46,8 +46,7 @@ export async function SiteFooter() {
               .
             </p>
 
-            {/* Renders only the profiles that are actually configured. */}
-            <SocialLinks label="Follow" className="mt-10" />
+            <SocialLinks className="border-line mt-10 border-t pt-10" />
           </div>
 
           {/* Link columns */}

@@ -1,15 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * The rule worth a test here is the omission.
- *
- * Instagram is the one account Nordic Lux has actually supplied, so it ships
- * as a default and is expected to render with nothing configured. Facebook and
- * TikTok have not been supplied. A regression that made either render anyway —
- * a bare `#`, a guessed handle, an icon linking nowhere — would point
- * customers at somebody else's profile, which is worse than showing no icon at
- * all. So: the known account plus whatever is configured, in a fixed order,
- * each carrying an accessible name that says whose account it is.
+ * Nordic Lux supplied exact profile URLs for all three platforms. They ship as
+ * defaults, in a fixed order, each with an accessible name that says whose
+ * account it is. Configuration may override any of them.
  *
  * The module reads the validated env at load, so each case re-imports it.
  */
@@ -20,7 +14,11 @@ const SOCIAL_KEYS = [
   'SOCIAL_TIKTOK_URL',
 ] as const;
 
-const INSTAGRAM_DEFAULT = 'https://www.instagram.com/thenordiclux/';
+const DEFAULTS = [
+  'https://www.facebook.com/share/14p2RKmg9BX/?mibextid=wwXIfr',
+  'https://www.tiktok.com/@thenordiclux?_r=1&_t=ZS-99mh0y5rkqF',
+  'https://www.instagram.com/thenordiclux?stkn=MWplcXdubW11eWxqNQ==',
+];
 
 const original: Record<string, string | undefined> = {};
 
@@ -45,48 +43,34 @@ afterEach(() => {
 });
 
 describe('getSocialLinks', () => {
-  it('ships the client-supplied Instagram account with nothing configured', async () => {
-    expect(await loadWith({})).toEqual([
-      {
-        platform: 'instagram',
-        href: INSTAGRAM_DEFAULT,
-        label: 'Nordic Lux on Instagram',
-      },
+  it('ships the exact client-supplied URLs with nothing configured', async () => {
+    const links = await loadWith({});
+    expect(links.map((l) => l.platform)).toEqual([
+      'facebook',
+      'tiktok',
+      'instagram',
+    ]);
+    expect(links.map((l) => l.href)).toEqual(DEFAULTS);
+    expect(links.map((l) => l.label)).toEqual([
+      'Nordic Lux on Facebook',
+      'Nordic Lux on TikTok',
+      'Nordic Lux on Instagram',
     ]);
   });
 
-  it('falls back to the known account when the variable is blank', async () => {
-    const links = await loadWith({ SOCIAL_INSTAGRAM_URL: '   ' });
-    expect(links.map((l) => l.href)).toEqual([INSTAGRAM_DEFAULT]);
+  it('falls back to the client URLs when a variable is blank', async () => {
+    const links = await loadWith({ SOCIAL_TIKTOK_URL: '   ' });
+    expect(links.map((l) => l.href)).toEqual(DEFAULTS);
   });
 
-  it('never invents a Facebook or TikTok profile', async () => {
-    const links = await loadWith({});
-    expect(links.map((l) => l.platform)).not.toContain('facebook');
-    expect(links.map((l) => l.platform)).not.toContain('tiktok');
-  });
-
-  it('lets configuration override the Instagram default', async () => {
+  it('lets configuration override a default', async () => {
     const links = await loadWith({
       SOCIAL_INSTAGRAM_URL: 'https://www.instagram.com/nordiclux/',
-      SOCIAL_TIKTOK_URL: 'https://www.tiktok.com/@nordiclux',
     });
-
-    expect(links.map((l) => l.platform)).toEqual(['instagram', 'tiktok']);
     expect(links.map((l) => l.href)).toEqual([
+      DEFAULTS[0],
+      DEFAULTS[1],
       'https://www.instagram.com/nordiclux/',
-      'https://www.tiktok.com/@nordiclux',
-    ]);
-  });
-
-  it('names the account holder in every accessible label', async () => {
-    const links = await loadWith({
-      SOCIAL_FACEBOOK_URL: 'https://www.facebook.com/nordiclux',
-    });
-
-    expect(links.map((l) => l.label)).toEqual([
-      'Nordic Lux on Instagram',
-      'Nordic Lux on Facebook',
     ]);
   });
 });
