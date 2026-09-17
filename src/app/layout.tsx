@@ -6,11 +6,11 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.appUrl),
   title: {
-    default: 'Nordic Lux — Curated beauty, wellness and pantry',
+    default: 'Nordic Lux — Curated beauty, skincare and wellness',
     template: '%s | Nordic Lux',
   },
   description:
-    'A curated house of beauty, skincare, fragrance, wellness and pantry from small northern studios. Considered products, honestly described.',
+    'A curated house of beauty, skincare, fragrance and wellness from small northern studios. Considered products, honestly described.',
   applicationName: 'Nordic Lux',
   openGraph: {
     type: 'website',

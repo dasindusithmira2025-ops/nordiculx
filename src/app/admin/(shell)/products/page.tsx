@@ -104,8 +104,15 @@ export default async function AdminProductsPage({
               {products.length} products
             </h1>
             <p className="text-fg-muted mt-3 max-w-2xl text-sm">
-              Edit USD prices, sale prices, stock and visibility. Storefront
-              catalogue pages revalidate after every save.
+              Prices, sale prices, stock and visibility across the whole
+              catalogue. Click a product to open its full editor — copy,
+              imagery, ingredients, variants and SEO. Storefront pages
+              revalidate after every save.
+            </p>
+            <p className="mt-3 text-xs">
+              <Link href="/admin/brands" className="text-fg link-underline">
+                Brand merchandising
+              </Link>
             </p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-right text-xs">
@@ -326,8 +333,14 @@ export default async function AdminProductsPage({
                         ) : null}
                       </div>
                       <div>
+                        {/* The name opens the full editor, which is what
+                            clicking a product in a catalogue screen is
+                            expected to do. The storefront link is kept as a
+                            separate, explicitly labelled action — merging the
+                            two is how this row ended up offering no way to
+                            edit anything but the price. */}
                         <Link
-                          href={`/product/${product.slug}`}
+                          href={`/admin/products/${product.id}/edit`}
                           className="text-fg link-retract font-medium"
                         >
                           {product.name}
@@ -342,6 +355,20 @@ export default async function AdminProductsPage({
                           {product.variantCount > 1
                             ? `${product.variantCount} variants`
                             : 'Single variant'}
+                        </p>
+                        <p className="mt-2 flex gap-3 text-xs">
+                          <Link
+                            href={`/admin/products/${product.id}/edit`}
+                            className="text-fg link-underline"
+                          >
+                            Edit
+                          </Link>
+                          <Link
+                            href={`/product/${product.slug}`}
+                            className="text-fg-subtle link-underline"
+                          >
+                            View
+                          </Link>
                         </p>
                       </div>
                     </div>

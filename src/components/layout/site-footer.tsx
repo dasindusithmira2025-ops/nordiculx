@@ -30,8 +30,9 @@ export async function SiteFooter() {
           <div className="max-w-md">
             <Wordmark size="lg" />
             <p className="text-fg-muted mt-6 text-sm">
-              A curated house of beauty, wellness and pantry from small northern
-              studios. Chosen for how they are used, not for what they promise.
+              A curated house of beauty, skincare and wellness from small
+              northern studios. Chosen for how they are used, not for what they
+              promise.
             </p>
 
             {/* No newsletter form here: the homepage already ends with a

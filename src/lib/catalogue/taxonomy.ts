@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { and, asc, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { db } from '@/lib/db';
+import { PAID_SALE } from './sales';
 import {
   announcements,
   articleProducts,
@@ -70,6 +71,77 @@ export const getBrands = cache(async () => {
     .from(brands)
     .where(eq(brands.status, 'published'))
     .orderBy(asc(brands.name));
+});
+
+/**
+ * Brands ordered by what customers have actually bought.
+ *
+ * Three tiers, in this order:
+ *
+ *   1. a manual merchandising pin — `brands.merchandising_rank`, set on
+ *      /admin/brands and NULL for almost every brand. Merchandising sometimes
+ *      needs a brand at the front for a reason the order book cannot know (a
+ *      launch, an exclusivity window), and the honest way to allow that is an
+ *      explicit pin rather than a fudged sales number;
+ *   2. units sold on paid, un-cancelled, un-returned orders;
+ *   3. featured, then alphabetical.
+ *
+ * Tier 3 is what makes this safe on a store with no sales history: the row
+ * still fills, it simply falls back to the editorial order instead of
+ * rendering empty or inventing figures. Nothing here is ever shown to a
+ * customer as a number — the sales data decides the ORDER, and only that.
+ */
+export const getTopSellingBrands = cache(async (limit = 8) => {
+  const rows = (await db.execute(sql`
+    SELECT b.id, b.name, b.slug, b.tagline, b.logo_url, b.hero_image_url,
+           b.featured, b.merchandising_rank,
+           COALESCE(sales.units, 0)::int AS units,
+           (SELECT COUNT(*)::int FROM products p
+             WHERE p.brand_id = b.id
+               AND p.status = 'published' AND p.deleted_at IS NULL
+           ) AS product_count
+      FROM brands b
+      LEFT JOIN LATERAL (
+        SELECT SUM(oi.quantity)::int AS units
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+          JOIN products p ON p.id = oi.product_id
+         WHERE p.brand_id = b.id AND ${PAID_SALE}
+      ) sales ON TRUE
+     WHERE b.status = 'published'
+     ORDER BY b.merchandising_rank ASC NULLS LAST,
+              COALESCE(sales.units, 0) DESC,
+              b.featured DESC,
+              b.name ASC
+     LIMIT ${limit}
+  `)) as unknown as {
+    id: string;
+    name: string;
+    slug: string;
+    tagline: string | null;
+    logo_url: string | null;
+    hero_image_url: string | null;
+    featured: boolean;
+    merchandising_rank: number | null;
+    units: number;
+    product_count: number;
+  }[];
+
+  // A brand with nothing published links to an empty page, so it is dropped
+  // rather than shown — the row is a shortcut into the catalogue, not a
+  // directory of every supplier.
+  return rows
+    .filter((r) => r.product_count > 0)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      tagline: r.tagline,
+      logoUrl: r.logo_url,
+      heroImageUrl: r.hero_image_url,
+      featured: r.featured,
+      productCount: r.product_count,
+    }));
 });
 
 export const getBrandBySlug = cache(async (slug: string) => {

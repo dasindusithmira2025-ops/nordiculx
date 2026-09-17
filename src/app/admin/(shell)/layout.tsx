@@ -18,6 +18,7 @@ const NAV: { href: string; label: string; permission?: Permission }[] = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/orders', label: 'Orders', permission: 'orders.view' },
   { href: '/admin/products', label: 'Products', permission: 'products.view' },
+  { href: '/admin/brands', label: 'Brands', permission: 'products.view' },
   { href: '/admin/returns', label: 'Returns', permission: 'returns.manage' },
   {
     href: '/admin/customers',

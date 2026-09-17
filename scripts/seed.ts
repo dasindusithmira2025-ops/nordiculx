@@ -194,9 +194,7 @@ async function main() {
       productSlugs: [
         'nordkap-pillow-mist',
         'lume-lip-balm',
-        'saga-birch-tea',
         'bjork-hand-balm',
-        'saga-forest-honey',
         'nordkap-bath-salts',
       ],
     },
@@ -987,12 +985,7 @@ async function main() {
       dark: false,
       featured: false,
       readingMinutes: 3,
-      products: [
-        'nordkap-cabin-candle',
-        'saga-forest-honey',
-        'nordkap-bath-salts',
-        'lume-lip-balm',
-      ],
+      products: ['nordkap-cabin-candle', 'nordkap-bath-salts', 'lume-lip-balm'],
       body: [
         {
           type: 'paragraph',
@@ -1182,50 +1175,65 @@ async function seedNavigation(
       href: '/category/skincare',
       children: [
         {
+          label: 'All Skincare',
+          href: '/category/skincare',
+          column: 'Categories',
+        },
+        {
           label: 'Cleansers',
           href: '/category/cleansers',
-          column: 'Shop by step',
+          column: 'Categories',
         },
         {
           label: 'Serums & Treatments',
           href: '/category/serums',
-          column: 'Shop by step',
+          column: 'Categories',
         },
         {
           label: 'Moisturisers',
           href: '/category/moisturisers',
-          column: 'Shop by step',
+          column: 'Categories',
         },
         {
           label: 'Sun Care',
           href: '/category/sun-care',
-          column: 'Shop by step',
+          column: 'Categories',
         },
-        { label: 'Masks', href: '/category/masks', column: 'Shop by step' },
+        { label: 'Masks', href: '/category/masks', column: 'Categories' },
+        {
+          label: 'Best Sellers',
+          href: '/category/skincare?sort=best-selling',
+          column: 'Discover',
+        },
+        {
+          label: 'New Arrivals',
+          href: '/category/skincare?sort=newest',
+          column: 'Discover',
+        },
         {
           label: 'Dryness',
           href: '/concern/dryness',
-          column: 'Shop by concern',
+          column: 'Shop by Concern',
         },
         {
           label: 'Dehydration',
           href: '/concern/dehydration',
-          column: 'Shop by concern',
+          column: 'Shop by Concern',
         },
         {
           label: 'Sensitivity',
           href: '/concern/sensitivity',
-          column: 'Shop by concern',
+          column: 'Shop by Concern',
         },
         {
           label: 'Blemishes',
           href: '/concern/blemishes',
-          column: 'Shop by concern',
+          column: 'Shop by Concern',
         },
         {
           label: 'Barrier Support',
           href: '/concern/barrier-support',
-          column: 'Shop by concern',
+          column: 'Shop by Concern',
         },
         {
           label: 'Routine Finder',
@@ -1287,16 +1295,10 @@ async function seedNavigation(
       ],
     },
     {
-      label: 'Wellness & Pantry',
+      label: 'Wellness',
       href: '/category/wellness',
       children: [
         { label: 'Bath & Ritual', href: '/category/bath', column: 'Wellness' },
-        { label: 'Tea & Infusions', href: '/category/tea', column: 'Pantry' },
-        {
-          label: 'Honey & Preserves',
-          href: '/category/preserves',
-          column: 'Pantry',
-        },
       ],
     },
     { label: 'Brands', href: '/brands' },
@@ -1362,7 +1364,7 @@ async function seedHomepage(collectionBySlug: Map<string, string>) {
       eyebrow: 'The Quiet Season',
       title: 'Fewer things,\nused properly.',
       description:
-        'A considered edit of skincare, fragrance and pantry from small northern studios — chosen for how they are used, not for what they promise.',
+        'A considered edit of skincare, fragrance and wellness from small northern studios — chosen for how they are used, not for what they promise.',
       ctaLabel: 'Shop now',
       ctaHref: '/shop',
       imageUrl: '/media/editorial/hero-primary.webp',

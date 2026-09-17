@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * The rule worth a test here is the omission.
  *
- * Nordic Lux has no recorded social accounts yet. A regression that made an
- * unset platform render anyway — a bare `#`, a guessed handle, an icon linking
- * nowhere — would point customers at somebody else's profile, which is worse
- * than showing no icons at all. So: only configured URLs, in a fixed order,
+ * Instagram is the one account Nordic Lux has actually supplied, so it ships
+ * as a default and is expected to render with nothing configured. Facebook and
+ * TikTok have not been supplied. A regression that made either render anyway —
+ * a bare `#`, a guessed handle, an icon linking nowhere — would point
+ * customers at somebody else's profile, which is worse than showing no icon at
+ * all. So: the known account plus whatever is configured, in a fixed order,
  * each carrying an accessible name that says whose account it is.
  *
  * The module reads the validated env at load, so each case re-imports it.
@@ -17,6 +19,8 @@ const SOCIAL_KEYS = [
   'SOCIAL_FACEBOOK_URL',
   'SOCIAL_TIKTOK_URL',
 ] as const;
+
+const INSTAGRAM_DEFAULT = 'https://www.instagram.com/thenordiclux/';
 
 const original: Record<string, string | undefined> = {};
 
@@ -41,15 +45,28 @@ afterEach(() => {
 });
 
 describe('getSocialLinks', () => {
-  it('renders nothing when no profile is configured', async () => {
-    expect(await loadWith({})).toEqual([]);
+  it('ships the client-supplied Instagram account with nothing configured', async () => {
+    expect(await loadWith({})).toEqual([
+      {
+        platform: 'instagram',
+        href: INSTAGRAM_DEFAULT,
+        label: 'Nordic Lux on Instagram',
+      },
+    ]);
   });
 
-  it('treats a blank variable as not configured', async () => {
-    expect(await loadWith({ SOCIAL_INSTAGRAM_URL: '   ' })).toEqual([]);
+  it('falls back to the known account when the variable is blank', async () => {
+    const links = await loadWith({ SOCIAL_INSTAGRAM_URL: '   ' });
+    expect(links.map((l) => l.href)).toEqual([INSTAGRAM_DEFAULT]);
   });
 
-  it('returns only the platforms that have a URL', async () => {
+  it('never invents a Facebook or TikTok profile', async () => {
+    const links = await loadWith({});
+    expect(links.map((l) => l.platform)).not.toContain('facebook');
+    expect(links.map((l) => l.platform)).not.toContain('tiktok');
+  });
+
+  it('lets configuration override the Instagram default', async () => {
     const links = await loadWith({
       SOCIAL_INSTAGRAM_URL: 'https://www.instagram.com/nordiclux/',
       SOCIAL_TIKTOK_URL: 'https://www.tiktok.com/@nordiclux',
@@ -67,7 +84,9 @@ describe('getSocialLinks', () => {
       SOCIAL_FACEBOOK_URL: 'https://www.facebook.com/nordiclux',
     });
 
-    expect(links).toHaveLength(1);
-    expect(links[0]!.label).toBe('Nordic Lux on Facebook');
+    expect(links.map((l) => l.label)).toEqual([
+      'Nordic Lux on Instagram',
+      'Nordic Lux on Facebook',
+    ]);
   });
 });

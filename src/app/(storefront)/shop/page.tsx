@@ -11,7 +11,7 @@ import { ListingBody } from '@/components/catalogue/listing';
 export const metadata: Metadata = {
   title: 'Shop all — Nordic Lux',
   description:
-    'The complete Nordic Lux range: skincare, fragrance, hair, body, wellness and pantry from small northern studios.',
+    'The complete Nordic Lux range: skincare, fragrance, hair, body and wellness from small northern studios.',
   alternates: { canonical: '/shop' },
 };
 

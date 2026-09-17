@@ -98,17 +98,6 @@ export const brands = [
       'Nordkap Wellness makes objects for the end of the day: bath salts, pillow mists, a candle that smells like a cabin with the stove lit. The range is built around the northern winter, when the useful thing is rarely another activity and usually a way to stop.',
   },
   {
-    slug: 'saga-pantry',
-    logo: { device: 'rule' as const },
-    name: 'Saga Pantry',
-    tagline: 'Small-batch Nordic pantry',
-    originCountry: 'Iceland',
-    featured: false,
-    description: 'Teas, honeys and preserves from small northern producers.',
-    story:
-      'Saga Pantry works with a short list of small northern producers — a birch-sap bottler in Lapland, an Icelandic seaweed harvester, a family apiary outside Uppsala — and buys whatever they can actually make. Batches are small, seasons are respected, and nothing is available all year.',
-  },
-  {
     slug: 'lume-studio',
     logo: { caps: true, device: 'dot' as const },
     name: 'Lume Studio',
@@ -174,15 +163,6 @@ export const categories = [
 
   { slug: 'wellness', name: 'Wellness', parent: null, sortOrder: 6 },
   { slug: 'bath', name: 'Bath & Ritual', parent: 'wellness', sortOrder: 1 },
-
-  { slug: 'pantry', name: 'Pantry', parent: null, sortOrder: 7 },
-  { slug: 'tea', name: 'Tea & Infusions', parent: 'pantry', sortOrder: 1 },
-  {
-    slug: 'preserves',
-    name: 'Honey & Preserves',
-    parent: 'pantry',
-    sortOrder: 2,
-  },
 ] as const;
 
 /* --- concerns ------------------------------------------------------------- */
@@ -1214,97 +1194,6 @@ export const products: SeedProduct[] = [
         price: 420000,
         weightGrams: 30,
         onHand: 2,
-      },
-    ],
-  },
-  {
-    slug: 'saga-birch-tea',
-    name: 'Birch & Nettle Infusion',
-    brand: 'saga-pantry',
-    category: 'tea',
-    subtitle: 'Caffeine-free, spring-harvested',
-    excerpt: 'A clean green infusion from a Lapland harvest.',
-    description:
-      'Birch leaf and nettle, harvested in spring and dried slowly. Caffeine-free, faintly sweet, and best without anything added.',
-    benefits: [
-      'Caffeine-free',
-      'Spring-harvested leaf',
-      'Loose leaf, 40 servings',
-    ],
-    howToUse:
-      'One teaspoon per cup. Steep in just-boiled water for four minutes.',
-    ingredientsList: 'Betula Pendula Leaf, Urtica Dioica Leaf.',
-    skinTypes: ['all'],
-    routineStep: 'wellness',
-    concerns: [],
-    keyIngredients: ['birch-sap'],
-    variants: [
-      {
-        name: '80g',
-        sku: 'SAG-BNI-080',
-        price: 240000,
-        weightGrams: 120,
-        onHand: 84,
-        isDefault: true,
-      },
-    ],
-  },
-  {
-    slug: 'saga-cloudberry-preserve',
-    name: 'Cloudberry Preserve',
-    brand: 'saga-pantry',
-    category: 'preserves',
-    subtitle: 'Small batch, short season',
-    excerpt: 'A sharp, amber preserve from a very short season.',
-    description:
-      'Cloudberries have a season measured in weeks, so this is made once a year and sold until it runs out. Sharp, faintly floral, and excellent on very cold butter.',
-    benefits: ['Made once a year', 'No added pectin', 'Glass jar, 220g'],
-    howToUse: 'Keep refrigerated after opening and use within four weeks.',
-    ingredientsList: 'Cloudberries (62%), Cane Sugar, Lemon Juice.',
-    skinTypes: ['all'],
-    routineStep: 'wellness',
-    concerns: [],
-    keyIngredients: ['cloudberry'],
-    variants: [
-      {
-        name: '220g',
-        sku: 'SAG-CBP-220',
-        price: 320000,
-        weightGrams: 420,
-        onHand: 11,
-        isDefault: true,
-      },
-    ],
-  },
-  {
-    slug: 'saga-forest-honey',
-    name: 'Forest Honey',
-    brand: 'saga-pantry',
-    category: 'preserves',
-    subtitle: 'Dark, resinous, unfiltered',
-    excerpt: 'A dark honey from an apiary outside Uppsala.',
-    description:
-      'Unfiltered honeydew honey — dark, thick and closer to malt than to flowers. From a family apiary that has worked the same forest for three generations.',
-    benefits: [
-      'Unfiltered and raw',
-      'Dark, resinous character',
-      'Single apiary',
-    ],
-    howToUse:
-      'Store at room temperature. Crystallisation is normal in a raw honey.',
-    ingredientsList: 'Raw Forest Honey.',
-    skinTypes: ['all'],
-    routineStep: 'wellness',
-    concerns: [],
-    keyIngredients: [],
-    variants: [
-      {
-        name: '340g',
-        sku: 'SAG-FRH-340',
-        price: 290000,
-        weightGrams: 520,
-        onHand: 38,
-        isDefault: true,
       },
     ],
   },

@@ -19,7 +19,7 @@ const box = (svg: string) => ({
 describe('brand wordmark', () => {
   it('declares a box the pinned type run fits exactly', () => {
     for (const request of [
-      { key: 'a', name: 'Saga Pantry' },
+      { key: 'a', name: 'Halvor Atelier' },
       {
         key: 'b',
         name: 'SUND Copenhagen',
@@ -45,7 +45,7 @@ describe('brand wordmark', () => {
     // The logo stage fits by height, so a mark that is taller than its
     // neighbours is a mark whose letterforms render smaller than theirs.
     for (const request of [
-      { key: 'a', name: 'Saga Pantry' },
+      { key: 'a', name: 'Halvor Atelier' },
       { key: 'b', name: 'Lume Studio', caps: true, device: 'dot' as const },
       { key: 'c', name: 'Nordkap Wellness', caps: true },
     ]) {

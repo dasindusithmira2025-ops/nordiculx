@@ -403,14 +403,22 @@ function MobileNav({
 
               <div id={`mobilenav-${item.id}`} hidden={!isExpanded}>
                 <ul className="bg-surface-sunken/40 pb-4">
-                  <li>
-                    <Link
-                      href={item.href}
-                      className="text-fg block px-5 py-2.5 text-sm"
-                    >
-                      All {item.label}
-                    </Link>
-                  </li>
+                  {/* The implicit "All Skincare" row is suppressed when the
+                      menu already carries an explicit link to the same place.
+                      Merchandising adding "All Skincare" to the mega-menu
+                      must not produce two identical rows here. */}
+                  {item.children.some(
+                    (child) => child.href === item.href,
+                  ) ? null : (
+                    <li>
+                      <Link
+                        href={item.href}
+                        className="text-fg block px-5 py-2.5 text-sm"
+                      >
+                        All {item.label}
+                      </Link>
+                    </li>
+                  )}
                   {item.children.map((child) => (
                     <li key={child.id}>
                       <Link

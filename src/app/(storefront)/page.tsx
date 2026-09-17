@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { listProducts } from '@/lib/catalogue/products';
 import {
   getArticles,
-  getBrands,
   getConcerns,
   getHomepageSections,
+  getTopSellingBrands,
 } from '@/lib/catalogue/taxonomy';
 import { currentUser } from '@/lib/auth';
 import { getWishlistProductIds } from '@/lib/wishlist';
@@ -22,9 +22,9 @@ import {
 import type { PromoTile } from '@/components/home/sections';
 
 export const metadata: Metadata = {
-  title: 'Nordic Lux — Curated beauty, wellness and pantry',
+  title: 'Nordic Lux — Curated beauty, skincare and wellness',
   description:
-    'A curated house of beauty, skincare, fragrance, wellness and pantry from small northern studios. Considered products, honestly described.',
+    'A curated house of beauty, skincare, fragrance and wellness from small northern studios. Considered products, honestly described.',
   alternates: { canonical: '/' },
 };
 
@@ -67,7 +67,7 @@ export default async function HomePage() {
         })
       : Promise.resolve(null),
     getConcerns(),
-    getBrands(),
+    getTopSellingBrands(8),
     getArticles({ limit: 3 }),
     user ? getWishlistProductIds(user.id) : Promise.resolve(new Set<string>()),
   ]);

@@ -117,22 +117,47 @@ blocker; it is an operating routine.
 
 ## 8. Social profile URLs
 
-**Nothing in this repository records a Nordic Lux social account** — not the
-database, not the configuration, not the archived legacy site. The footer and
-the contact page are wired to show them and will render nothing until they are
-supplied, because linking customers to a guessed handle sends them to somebody
-else's account.
+Instagram is known and ships by default:
+**https://www.instagram.com/thenordiclux/** (`src/lib/social.ts`). It renders in
+the footer, on `/contact` and in the desktop header without any configuration.
 
-| Variable | Notes |
-| --- | --- |
-| `SOCIAL_INSTAGRAM_URL` | Full canonical profile URL |
-| `SOCIAL_FACEBOOK_URL` | Full canonical page URL |
-| `SOCIAL_TIKTOK_URL` | Full canonical profile URL |
+**Facebook and TikTok are still outstanding.** Neither URL appears anywhere in
+this repository — not the database, not the configuration, not the archived
+legacy site — so neither icon renders. They are not guessed, and they will not
+be: linking customers to an invented handle sends them to somebody else's
+account.
+
+| Variable | Status | Notes |
+| --- | --- | --- |
+| `SOCIAL_INSTAGRAM_URL` | Optional | Overrides the default above |
+| `SOCIAL_FACEBOOK_URL` | **REQUIRED FROM CLIENT** | Full canonical page URL |
+| `SOCIAL_TIKTOK_URL` | **REQUIRED FROM CLIENT** | Full canonical profile URL |
 
 Set only the ones that exist. Each platform is independent: an unset variable
 means that icon is simply not rendered, and no code change is needed to add a
-platform later. The links are consumed in one place,
-`src/lib/social.ts`.
+platform later. The links are consumed in one place, `src/lib/social.ts`.
+
+---
+
+## 9. Merchandising update — one-off script
+
+The 2026 merchandising change (Skincare navigation, Pantry retirement, Top
+Selling Brands) ships as `npm run merchandising:update`. It is DATA, not
+schema, so it has to be run once against each database that is already
+trading — `npm run db:seed` only ever touches an empty one.
+
+```bash
+npm run db:migrate                   # adds products.best_seller
+npm run merchandising:update -- --dry-run   # read the report first
+npm run merchandising:update
+```
+
+It archives rather than deletes, and it is idempotent — a second run changes
+nothing. Reversing the Pantry retirement is an `UPDATE ... SET status =
+'published'` on the three categories and their products, not a restore.
+
+Take a backup before running it in production, and pass `--force` there (the
+script refuses to run against `NODE_ENV=production` without it).
 
 ---
 

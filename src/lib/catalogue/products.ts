@@ -2,6 +2,7 @@ import 'server-only';
 import { sql, type SQL } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { discountPercent } from '@/lib/money';
+import { unitsSoldFor } from './sales';
 import type {
   ProductCardView,
   ProductDetailView,
@@ -219,6 +220,12 @@ function buildConditions(filters: ProductFilters): SQL {
 
 function buildOrderBy(sort: ProductSort): SQL {
   switch (sort) {
+    case 'best-selling':
+      // Real units on paid orders, with the editorial pin ahead of it. A
+      // product staff flagged leads the row; below that the order is what
+      // customers actually bought, so a store with no sales yet degrades to
+      // the flag and then to rating rather than to an empty listing.
+      return sql`(v.available > 0) DESC, p.best_seller DESC, ${unitsSoldFor()} DESC, p.rating_count DESC, p.created_at DESC`;
     case 'newest':
       return sql`p.created_at DESC`;
     case 'price-asc':

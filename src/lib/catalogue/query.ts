@@ -188,6 +188,7 @@ export function toggleFacetHref(
 
 export const SORT_LABELS: Record<ProductSort, string> = {
   featured: 'Featured',
+  'best-selling': 'Best selling',
   newest: 'Newest',
   'price-asc': 'Price, low to high',
   'price-desc': 'Price, high to low',

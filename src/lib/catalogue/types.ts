@@ -101,6 +101,7 @@ export type ProductFilters = {
 
 export const PRODUCT_SORTS = [
   'featured',
+  'best-selling',
   'newest',
   'price-asc',
   'price-desc',

@@ -35,7 +35,8 @@
     "seed:sample-orders": "tsx --conditions=react-server scripts/seed-sample-orders.ts",
     "data:cleanup": "tsx --conditions=react-server scripts/cleanup-operating-data.ts",
     "media:normalize": "tsx scripts/normalize-product-media.ts",
-    "media:brand-logos": "tsx --conditions=react-server scripts/fetch-brand-logos.ts"
+    "media:brand-logos": "tsx --conditions=react-server scripts/fetch-brand-logos.ts",
+    "merchandising:update": "tsx --conditions=react-server scripts/merchandising-update.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",

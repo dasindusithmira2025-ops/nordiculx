@@ -54,6 +54,20 @@ export const brands = pgTable(
     featured: boolean().notNull().default(false),
     sortOrder: integer().notNull().default(0),
 
+    /**
+     * Merchandising pin for the Top Selling Brands row.
+     *
+     * NULL — the default and the usual case — means "rank this brand on what
+     * it has actually sold". A number pins it to that slot regardless of the
+     * order book, for a launch or an exclusivity window that sales data cannot
+     * know about.
+     *
+     * Deliberately NOT `sortOrder`, which the seed fills with an arbitrary
+     * index for every brand: overloading it would mean every brand read as
+     * pinned and the sales ranking would never apply to anything.
+     */
+    merchandisingRank: integer(),
+
     seoTitle: text(),
     seoDescription: text(),
 
@@ -236,6 +250,13 @@ export const products = pgTable(
 
     status: publishStatusEnum().notNull().default('draft'),
     featured: boolean().notNull().default(false),
+    /**
+     * Merchandising pin for the Best Sellers listing. It is an editorial
+     * override, NOT a sales figure: the listing orders flagged products first
+     * and then by units actually sold on paid orders, so an unflagged product
+     * that genuinely outsells everything still ranks.
+     */
+    bestSeller: boolean().notNull().default(false),
     /** Surfaces the product in "New & Noteworthy" until this date passes. */
     newUntil: timestamp({ withTimezone: true }),
 
@@ -261,6 +282,7 @@ export const products = pgTable(
     // The PLP's hot path: published, not deleted, newest first.
     index('products_status_created_idx').on(t.status, t.deletedAt, t.createdAt),
     index('products_featured_idx').on(t.featured),
+    index('products_best_seller_idx').on(t.bestSeller),
   ],
 );
 
@@ -541,6 +563,7 @@ export type Product = typeof products.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type ProductMedia = typeof productMedia.$inferSelect;
 export type Ingredient = typeof ingredients.$inferSelect;
+export type MediaKind = (typeof mediaKindEnum.enumValues)[number];
 export type PublishStatus = (typeof publishStatusEnum.enumValues)[number];
 export type SkinType = (typeof skinTypeEnum.enumValues)[number];
 export type RoutineStep = (typeof routineStepEnum.enumValues)[number];

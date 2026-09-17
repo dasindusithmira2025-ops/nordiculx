@@ -9,7 +9,16 @@ import { env } from '@/lib/env';
  * configured URL produces no entry, so the site can never link to a profile
  * Nordic Lux does not own. Adding a profile is a deploy-time environment
  * change, not a code change.
+ *
+ * Instagram is the one exception: the account below is the handle Nordic Lux
+ * supplied, so it ships as the default and the environment variable only has
+ * to be set to point somewhere else. Facebook and TikTok have no default and
+ * never will — guessing a URL for either would link customers to an account
+ * that may belong to somebody else entirely.
  */
+
+/** Client-supplied. Overridden by SOCIAL_INSTAGRAM_URL when that is set. */
+const INSTAGRAM_URL = 'https://www.instagram.com/thenordiclux/';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok';
 
@@ -22,7 +31,7 @@ export type SocialLink = {
 
 export function getSocialLinks(): SocialLink[] {
   const configured: [SocialPlatform, string, string | undefined][] = [
-    ['instagram', 'Instagram', env.SOCIAL_INSTAGRAM_URL],
+    ['instagram', 'Instagram', env.SOCIAL_INSTAGRAM_URL ?? INSTAGRAM_URL],
     ['facebook', 'Facebook', env.SOCIAL_FACEBOOK_URL],
     ['tiktok', 'TikTok', env.SOCIAL_TIKTOK_URL],
   ];
