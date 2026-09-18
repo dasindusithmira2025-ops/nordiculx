@@ -1,6 +1,6 @@
 # Nordic Lux — temporary price register
 
-Generated 2026-08-26 · 61 of 87 products carry temporary operational USD prices.
+Generated 2026-09-18 · 61 of 87 products carry temporary operational USD prices.
 
 These products are imported, complete, image-verified and published. Their
 current prices are temporary operational USD prices approved for launch

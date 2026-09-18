@@ -1,120 +1,44 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { useState } from 'react';
 import { whatsappGeneralLink } from '@/lib/whatsapp';
-import {
-  ChatIcon,
-  CloseIcon,
-  ExternalIcon,
-  WhatsAppIcon,
-} from '@/components/ui/icons';
+import { ChatIcon, WhatsAppIcon } from '@/components/ui/icons';
 import { LiveChatPanel } from './live-chat-panel';
 
 /**
- * Floating support entry.
+ * Floating support actions.
  *
- * Deliberately small and low-contrast until interacted with — a pulsing badge
- * over a luxury storefront reads as a support ticket queue, not a boutique.
- * Collapsed it is a single button; expanded it offers live chat and WhatsApp.
+ * Live chat and WhatsApp are separate actions so customers can choose their
+ * preferred channel immediately. The WhatsApp action keeps the platform's
+ * recognizable green mark; live chat stays in the Nordic Lux ink palette.
  */
 export function SupportLauncher() {
-  const [open, setOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    const onPointerDown = (e: PointerEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [open]);
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="fixed right-5 bottom-5 z-30 flex flex-col items-end gap-3 print:hidden"
-      >
-        {open ? (
-          <div
-            id="support-menu"
-            className="animate-fade-up border-line bg-surface-raised shadow-overlay w-64 border"
-          >
-            <p className="eyebrow border-line text-fg-subtle border-b px-4 py-3">
-              How can we help?
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setChatOpen(true);
-                setOpen(false);
-              }}
-              className="text-fg hover:bg-accent-soft flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors"
-            >
-              <ChatIcon
-                width={18}
-                height={18}
-                className="text-fg-muted shrink-0"
-              />
-              <span>
-                Live chat
-                <span className="text-fg-subtle block text-xs">
-                  We reply during opening hours
-                </span>
-              </span>
-            </button>
-
-            <a
-              href={whatsappGeneralLink()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-line text-fg hover:bg-accent-soft flex w-full items-center gap-3 border-t px-4 py-3.5 text-sm transition-colors"
-            >
-              <WhatsAppIcon
-                width={18}
-                height={18}
-                className="text-fg-muted shrink-0"
-              />
-              <span className="flex-1">
-                WhatsApp
-                <span className="text-fg-subtle block text-xs">
-                  Opens in WhatsApp
-                </span>
-              </span>
-              <ExternalIcon
-                width={13}
-                height={13}
-                className="text-fg-subtle shrink-0"
-              />
-            </a>
-          </div>
-        ) : null}
-
+      <div className="fixed right-4 bottom-4 z-30 flex flex-col items-center gap-2 sm:right-5 sm:bottom-5 print:hidden">
         <button
           type="button"
-          aria-expanded={open}
-          aria-controls="support-menu"
-          aria-label={open ? 'Close support menu' : 'Open support menu'}
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            'border-line-strong flex size-12 items-center justify-center border',
-            'bg-surface-raised text-fg shadow-lift transition-colors',
-            'hover:bg-fg hover:text-surface',
-          )}
+          aria-label="Open live chat"
+          title="Live chat"
+          onClick={() => setChatOpen(true)}
+          className="border-line-strong bg-fg text-surface shadow-lift hover:bg-accent hover:text-accent-fg flex size-12 items-center justify-center border transition-colors"
         >
-          {open ? <CloseIcon /> : <ChatIcon />}
+          <ChatIcon width={22} height={22} />
         </button>
+
+        <a
+          href={whatsappGeneralLink()}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat with Nordic Lux on WhatsApp"
+          title="WhatsApp"
+          className="shadow-lift flex size-12 items-center justify-center border border-[#25d366] bg-[#25d366] text-white transition-colors hover:border-[#1ebe5d] hover:bg-[#1ebe5d]"
+        >
+          <WhatsAppIcon width={23} height={23} />
+          <span className="sr-only">WhatsApp</span>
+        </a>
       </div>
 
       <LiveChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />

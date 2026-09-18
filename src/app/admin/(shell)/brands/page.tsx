@@ -1,9 +1,11 @@
 import Link from 'next/link';
-import { requireStaff } from '@/lib/auth';
-import { listBrandsForMerchandising } from '@/lib/admin/brands';
-import { saveBrandMerchandising } from '@/app/actions/admin-products';
+import { can, requireStaff } from '@/lib/auth';
+import { listBrandsForAdmin } from '@/lib/admin/brands';
+import { saveBrandMerchandising } from '@/app/actions/admin-brands';
 import { formatMoney } from '@/lib/money';
 import { Badge } from '@/components/ui/display';
+import { ButtonLink } from '@/components/ui/button';
+import { BrandLogo } from '@/components/catalogue/brand-logo';
 import {
   adminField,
   Cell,
@@ -15,47 +17,34 @@ import {
 } from '@/components/admin/admin-ui';
 import { RowForm } from '@/components/admin/row-form';
 
-/**
- * Brand merchandising.
- *
- * The homepage's Top Selling Brands row is ordered by units actually sold on
- * paid orders. That is the right default and it is not negotiable from here —
- * there is no field on this screen that can inflate a brand's sales.
- *
- * What staff CAN do is pin: a position puts a brand at that slot regardless of
- * the order book, for a launch or an exclusivity window that sales data has no
- * way of knowing about. Everything left blank keeps ranking on what people
- * bought — which is almost everything.
- */
 export const dynamic = 'force-dynamic';
 
 export default async function AdminBrandsPage() {
-  await requireStaff('products.view');
-  const brands = await listBrandsForMerchandising();
+  const user = await requireStaff('products.view');
+  const canManage = can(user.staffRole, 'products.manage');
+  const brands = await listBrandsForAdmin();
 
-  const pinned = brands.filter((b) => b.merchandisingRank !== null).length;
-  const selling = brands.filter((b) => b.units > 0).length;
+  const published = brands.filter((brand) => brand.status === 'published').length;
+  const featured = brands.filter((brand) => brand.featured).length;
+  const pinned = brands.filter((brand) => brand.merchandisingRank !== null).length;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Merchandising"
+        eyebrow="Catalogue operations"
         title="Brands"
-        description={
-          <>
-            Leave the position blank — which is the normal case — and the brand
-            ranks on what it has actually sold. A number pins it to that slot in
-            the homepage Top Selling Brands row. Units and revenue below count
-            paid orders only, excluding anything cancelled or returned.{' '}
-            <Link href="/admin/products" className="link-underline text-fg">
-              Back to products
-            </Link>
-            .
-          </>
+        description="Create and maintain every brand identity, storefront setting, logo, story, search field, and homepage placement from one workspace."
+        actions={
+          canManage ? (
+            <ButtonLink href="/admin/brands/new" size="sm">
+              Add brand
+            </ButtonLink>
+          ) : null
         }
         stats={[
           { label: 'Brands', value: brands.length },
-          { label: 'Selling', value: selling },
+          { label: 'Published', value: published },
+          { label: 'Featured', value: featured },
           { label: 'Pinned', value: pinned },
         ]}
       />
@@ -69,56 +58,93 @@ export default async function AdminBrandsPage() {
             <Th>Products</Th>
             <Th>Units sold</Th>
             <Th>Revenue</Th>
-            <Th>Merchandising</Th>
+            <Th>Status</Th>
+            <Th>Storefront</Th>
+            <Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
           {brands.map((brand) => (
             <tr key={brand.id}>
               <Td>
-                <span className="text-fg">{brand.name}</span>
-                <span className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge
-                    tone={brand.status === 'published' ? 'success' : 'neutral'}
-                  >
-                    {brand.status}
-                  </Badge>
-                  <Link
-                    href={`/brands/${brand.slug}`}
-                    className="text-fg-subtle link-underline text-xs"
-                  >
-                    /brands/{brand.slug}
-                  </Link>
+                <div className="flex items-center gap-3">
+                  <BrandLogo
+                    slug={brand.slug}
+                    name={brand.name}
+                    logoUrl={brand.logoUrl}
+                    stage={34}
+                    className="w-24 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <span className="text-fg block">{brand.name}</span>
+                    <span className="text-fg-subtle mt-1 block text-xs">
+                      {brand.slug}
+                    </span>
+                  </div>
+                </div>
+              </Td>
+              <Td className="tabular-nums">
+                <span>{brand.publishedProducts}</span>
+                <span className="text-fg-subtle ml-1 text-xs">
+                  / {brand.products} total
                 </span>
               </Td>
-              <Td className="tabular-nums">{brand.publishedProducts}</Td>
               <Td className="tabular-nums">{brand.units}</Td>
               <Td className="tabular-nums">{formatMoney(brand.revenue)}</Td>
               <Td>
-                <RowForm id={brand.id} action={saveBrandMerchandising}>
-                  <div className="flex flex-wrap items-end gap-4">
-                    <Cell label="Pin to position" className="w-28">
-                      <input
-                        name="merchandisingRank"
-                        type="number"
-                        min={1}
-                        max={99}
-                        placeholder="Auto"
-                        defaultValue={brand.merchandisingRank ?? ''}
-                        className={adminField}
-                      />
-                    </Cell>
-                    <label className="text-fg flex items-center gap-2 pb-2 text-sm">
-                      <input
-                        type="checkbox"
-                        name="featured"
-                        defaultChecked={brand.featured}
-                        className="size-4"
-                      />
-                      Featured
-                    </label>
-                  </div>
-                </RowForm>
+                <Badge tone={brand.status === 'published' ? 'success' : 'neutral'}>
+                  {brand.status}
+                </Badge>
+              </Td>
+              <Td>
+                {canManage ? (
+                  <RowForm id={brand.id} action={saveBrandMerchandising}>
+                    <div className="flex flex-wrap items-end gap-3">
+                      <Cell label="Pin" className="w-20">
+                        <input
+                          name="merchandisingRank"
+                          type="number"
+                          min={1}
+                          max={99}
+                          placeholder="Auto"
+                          defaultValue={brand.merchandisingRank ?? ''}
+                          className={adminField}
+                        />
+                      </Cell>
+                      <label className="text-fg flex items-center gap-2 pb-2 text-xs">
+                        <input
+                          type="checkbox"
+                          name="featured"
+                          defaultChecked={brand.featured}
+                          className="size-4"
+                        />
+                        Featured
+                      </label>
+                    </div>
+                  </RowForm>
+                ) : (
+                  <span className="text-fg-subtle text-xs">
+                    {brand.featured ? 'Featured' : 'Sales ranked'}
+                  </span>
+                )}
+              </Td>
+              <Td>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  <Link
+                    href={`/brands/${brand.slug}`}
+                    className="text-fg link-underline"
+                  >
+                    View
+                  </Link>
+                  {canManage ? (
+                    <Link
+                      href={`/admin/brands/${brand.id}/edit`}
+                      className="text-fg link-underline"
+                    >
+                      Edit
+                    </Link>
+                  ) : null}
+                </div>
               </Td>
             </tr>
           ))}

@@ -1,6 +1,6 @@
 # Post-import comparison — full catalogue
 
-Generated 2026-08-20T20:41:39.953Z
+Generated 2026-09-18T18:40:34.003Z
 
 Every planned row was re-read from PostgreSQL and compared field by field:
 name, slug, brand, category, variant, price, publish status, stock, media
@@ -23,7 +23,7 @@ The imported catalogue matches the plan exactly.
 | Published | 87 |
 | Temporary operational prices | 61 |
 | Stock units (from PDF export) | 124 |
-| Media rows | 177 |
+| Media rows | 197 |
 | Products with an official source | 61 |
 | Products with legacy content | 26 |
 | Description sources | official 2, nordic-lux-live 80, pdf 1, legacy 4 |

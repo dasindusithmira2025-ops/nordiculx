@@ -111,7 +111,7 @@ export default async function AdminProductsPage({
             </p>
             <p className="mt-3 text-xs">
               <Link href="/admin/brands" className="text-fg link-underline">
-                Brand merchandising
+                Brand management
               </Link>
             </p>
           </div>

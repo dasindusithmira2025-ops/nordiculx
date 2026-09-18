@@ -165,6 +165,56 @@ test.describe('admin product editor', () => {
 });
 
 test.describe('brand merchandising', () => {
+  test('creates, edits, previews, and removes an unused brand', async ({
+    page,
+  }) => {
+    await staffSignIn(page);
+
+    const suffix = Date.now();
+    const name = `E2E Brand ${suffix}`;
+    const slug = `e2e-brand-${suffix}`;
+
+    await page.goto('/admin/brands/new');
+    await page
+      .getByRole('textbox', { name: 'Brand name', exact: true })
+      .fill(name);
+    await page
+      .getByRole('textbox', { name: 'URL slug', exact: true })
+      .fill(slug);
+    await page
+      .getByRole('textbox', { name: 'Logo URL', exact: true })
+      .fill('/media/brands/revuele.png');
+    await page.getByRole('button', { name: /^create brand$/i }).click();
+    await expect(page.getByText('Saved.')).toBeVisible();
+
+    await page.goto('/admin/brands');
+    const row = page.locator('tbody tr').filter({ hasText: name });
+    await expect(row).toBeVisible();
+    await row.getByRole('link', { name: 'Edit' }).click();
+    await expect(page).toHaveURL(/\/admin\/brands\/[0-9a-f-]+\/edit$/);
+
+    await page
+      .getByRole('textbox', { name: 'Tagline', exact: true })
+      .fill('Created in the brand workspace.');
+    await page.getByRole('checkbox', { name: 'Featured brand' }).check();
+    await page.getByRole('button', { name: /^save brand$/i }).click();
+    await expect(page.getByText('Saved.')).toBeVisible();
+
+    const editUrl = page.url();
+    await page.goto(editUrl);
+    await expect(
+      page.getByRole('textbox', { name: 'Tagline', exact: true }),
+    ).toHaveValue('Created in the brand workspace.');
+    await expect(
+      page.getByRole('img', { name: 'Brand logo preview' }),
+    ).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: /^delete brand$/i }).click();
+    await expect(page).toHaveURL(/\/admin\/brands$/);
+    await expect(page.getByText(name)).toHaveCount(0);
+  });
+
   test('pins a brand and reports what it has actually sold', async ({
     page,
   }) => {
