@@ -17,6 +17,7 @@ let getProductFacets: typeof import('@/lib/catalogue/products').getProductFacets
 let getProductBySlug: typeof import('@/lib/catalogue/products').getProductBySlug;
 let getConcerns: typeof import('@/lib/catalogue/taxonomy').getConcerns;
 let getBrands: typeof import('@/lib/catalogue/taxonomy').getBrands;
+let getNavigation: typeof import('@/lib/catalogue/taxonomy').getNavigation;
 let search: typeof import('@/lib/catalogue/search').search;
 let connection: typeof import('@/lib/db').sql;
 
@@ -27,7 +28,8 @@ beforeAll(async () => {
     await db.db.execute((await import('drizzle-orm')).sql`SELECT 1`);
     ({ listProducts, getProductFacets, getProductBySlug } =
       await import('@/lib/catalogue/products'));
-    ({ getConcerns, getBrands } = await import('@/lib/catalogue/taxonomy'));
+    ({ getConcerns, getBrands, getNavigation } =
+      await import('@/lib/catalogue/taxonomy'));
     ({ search } = await import('@/lib/catalogue/search'));
     available = true;
   } catch {
@@ -320,6 +322,32 @@ describe('search', () => {
   dbIt('returns an empty result set for gibberish', async () => {
     const results = await search('zzzzqqqqxxxx');
     expect(results.total).toBe(0);
+  });
+});
+
+describe('navigation', () => {
+  /**
+   * Regression: the menu was seeded against the demo catalogue and kept its
+   * Fragrance, Makeup and Wellness entries after the real one replaced it —
+   * five header links onto listings with nothing in them.
+   */
+  dbIt('never links to a category with no products', async () => {
+    for (const location of ['header', 'footer'] as const) {
+      const items = await getNavigation(location);
+      const flat = items.flatMap((item) => [item, ...item.children]);
+      for (const item of flat) {
+        if (!item.href.startsWith('/category/')) continue;
+        const slug = item.href.slice('/category/'.length).split(/[?#]/)[0]!;
+        const listing = await listProducts({
+          filters: { categorySlugs: [slug] },
+          pageSize: 1,
+        });
+        expect(
+          listing.total,
+          `${location} "${item.label}" (${item.href})`,
+        ).toBeGreaterThan(0);
+      }
+    }
   });
 });
 
