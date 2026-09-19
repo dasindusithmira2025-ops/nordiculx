@@ -307,32 +307,6 @@ const buildNav = (
   return roots;
 };
 
-/**
- * Published category slugs that actually have something to show.
- *
- * The rule matches `listProducts` exactly — a category counts its children, so
- * "Skincare" is not empty just because nothing is filed directly under it.
- * Anything else and the menu would disagree with the page it links to.
- */
-const liveCategorySlugs = cache(async () => {
-  const rows = (await db.execute(sql`
-    SELECT c.slug FROM categories c
-    WHERE c.status = 'published' AND EXISTS (
-      SELECT 1 FROM products p
-      JOIN categories filed ON filed.id = p.category_id
-      WHERE (filed.id = c.id OR filed.parent_id = c.id)
-        AND p.status = 'published' AND p.deleted_at IS NULL
-    )
-  `)) as unknown as { slug: string }[];
-  return new Set(rows.map((r) => r.slug));
-});
-
-/** `/category/sun-care?sort=newest` -> `sun-care`; anything else -> null. */
-const categorySlugOf = (href: string) =>
-  href.startsWith('/category/')
-    ? (href.slice('/category/'.length).split(/[?#]/)[0] ?? null)
-    : null;
-
 export const getNavigation = cache(
   async (location: 'header' | 'footer' | 'mobile' = 'header') => {
     const rows = await db
@@ -352,20 +326,7 @@ export const getNavigation = cache(
         ),
       )
       .orderBy(asc(navigationItems.sortOrder));
-
-    // A menu entry pointing at a category that is unpublished, deleted or
-    // simply carries no products is a dead end — and the catalogue changes far
-    // more often than the menu does. Dropping them here rather than in the
-    // header covers every caller (header, footer, mobile) and leaves the rows
-    // in place, so merchandising still sees them in the admin and they come
-    // back on their own once the category has stock. Orphaned children fall
-    // out of `buildNav` along with their dropped parent.
-    const live = await liveCategorySlugs();
-    const reachable = rows.filter((row) => {
-      const slug = categorySlugOf(row.href);
-      return slug === null || live.has(slug);
-    });
-    return buildNav(reachable);
+    return buildNav(rows);
   },
 );
 
