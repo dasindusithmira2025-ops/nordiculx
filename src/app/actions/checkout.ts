@@ -23,6 +23,7 @@ import {
 import { currentUser } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { publicConfig } from '@/lib/public-config';
+import { DEFAULT_CURRENCY } from '@/lib/money';
 import {
   actionError,
   addressSchema,
@@ -143,7 +144,7 @@ export async function submitCheckout(
     orderId: placed.orderId,
     reference: placed.reference,
     amount: placed.grandTotal,
-    currency: 'USD',
+    currency: DEFAULT_CURRENCY,
     customerEmail: parsed.data.email,
     customerPhone: parsed.data.phone,
     customerFirstName: parsed.data.shipping.recipientName.split(' ')[0] ?? '',
@@ -203,7 +204,7 @@ export async function submitCheckout(
     {
       items: placed.itemCount,
       value: placed.grandTotal,
-      currency: 'USD',
+      currency: DEFAULT_CURRENCY,
       promotion: Boolean(placed.promotionCode),
     },
     { path: '/checkout' },

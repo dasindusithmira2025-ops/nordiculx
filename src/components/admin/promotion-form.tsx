@@ -153,7 +153,7 @@ export function PromotionForm({
           />
         </Cell>
         <Cell
-          label="Amount off (USD)"
+          label="Amount off (LKR)"
           className={type === 'fixed_amount' ? '' : 'hidden'}
           hint={error('amount') ?? undefined}
         >
@@ -166,7 +166,7 @@ export function PromotionForm({
             className={adminField}
           />
         </Cell>
-        <Cell label="Minimum spend (USD)" hint="0 for no minimum.">
+        <Cell label="Minimum spend (LKR)" hint="0 for no minimum.">
           <input
             name="minimumSubtotal"
             inputMode="decimal"
@@ -175,7 +175,7 @@ export function PromotionForm({
           />
         </Cell>
         <Cell
-          label="Maximum discount (USD)"
+          label="Maximum discount (LKR)"
           className={type === 'percentage' ? '' : 'hidden'}
           hint="Caps what a percentage can give away. Blank for no cap."
         >

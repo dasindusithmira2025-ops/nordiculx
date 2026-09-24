@@ -56,7 +56,7 @@ const nullableMoneySchema = z
   .refine(
     (value) => value === null || (Number.isInteger(value) && value >= 0),
     {
-      message: 'Enter a valid USD amount.',
+      message: 'Enter a valid LKR amount.',
     },
   );
 
@@ -65,7 +65,7 @@ const moneySchema = z
   .trim()
   .transform((value) => parseMoneyInput(value))
   .refine((value): value is number => Number.isInteger(value) && value! > 0, {
-    message: 'Enter a valid USD price.',
+    message: 'Enter a valid LKR price.',
   });
 
 function catalogueRevalidate(slug?: string | null) {

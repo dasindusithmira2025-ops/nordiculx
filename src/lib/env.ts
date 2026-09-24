@@ -88,7 +88,7 @@ const serverSchema = z.object({
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 
   // --- integrations ------------------------------------------------------
-  WHATSAPP_NUMBER: z.string().default('94776316512'),
+  WHATSAPP_NUMBER: z.string().default('94770130299'),
   ANALYTICS_ENABLED: bool,
 
   // --- social profiles ---------------------------------------------------

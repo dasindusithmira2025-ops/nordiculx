@@ -20,7 +20,7 @@ describe('SupportLauncher', () => {
     });
     expect(whatsapp).toBeTruthy();
     expect(whatsapp.getAttribute('href')).toBe(
-      'https://wa.me/94776316512?text=Hello%20Nordic%20Lux%2C%20I%20have%20a%20question.',
+      'https://wa.me/94770130299?text=Hello%20Nordic%20Lux%2C%20I%20have%20a%20question.',
     );
     expect(screen.queryByText('How can we help?')).toBeNull();
   });

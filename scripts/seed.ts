@@ -1166,9 +1166,8 @@ async function seedNavigation(
     children?: { label: string; href: string; column?: string }[];
   }[] = [
     {
-      label: 'New',
-      href: '/shop?sort=newest',
-      badge: 'New',
+      label: 'Shop all',
+      href: '/shop',
     },
     {
       label: 'Skincare',

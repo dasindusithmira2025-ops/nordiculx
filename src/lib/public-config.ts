@@ -15,6 +15,6 @@ export const publicConfig = {
   appName: process.env.NEXT_PUBLIC_APP_NAME ?? 'Nordic Lux',
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   /** International format, digits only. */
-  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '94776316512',
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '94770130299',
   analyticsEnabled: process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== 'false',
 } as const;

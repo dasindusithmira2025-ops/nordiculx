@@ -77,7 +77,7 @@ a restrictive `Permissions-Policy`, and HSTS with preload.
 Stripe secret and webhook keys stay in the server environment. Checkout is
 Stripe-hosted; Nordic Lux handles no PAN, CVC, or expiry. The webhook reads the
 exact raw body and verifies `stripe-signature` before validating the stored
-order id/reference, Checkout Session id, USD amount, and currency. Browser
+order id/reference, Checkout Session id, amount, and currency. Browser
 success/cancel query strings never change payment or order state.
 
 ## Rate limiting

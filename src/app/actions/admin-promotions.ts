@@ -38,7 +38,7 @@ const money = z
   .trim()
   .transform((value) => (value === '' ? 0 : parseMoneyInput(value)))
   .refine((value): value is number => Number.isInteger(value) && value! >= 0, {
-    message: 'Enter a valid USD amount.',
+    message: 'Enter a valid LKR amount.',
   });
 
 const optionalMoney = z
@@ -47,7 +47,7 @@ const optionalMoney = z
   .transform((value) => (value === '' ? null : parseMoneyInput(value)))
   .refine(
     (value) => value === null || (Number.isInteger(value) && value >= 0),
-    { message: 'Enter a valid USD amount.' },
+    { message: 'Enter a valid LKR amount.' },
   );
 
 const optionalCount = z

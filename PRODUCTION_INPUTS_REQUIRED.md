@@ -93,7 +93,7 @@ clears the checkbox, so the outstanding ones are visible at a glance.
 
 ## 6. Catalogue pricing
 
-Prices are USD and provisional by the client's own decision — they vary
+Prices are LKR and provisional by the client's own decision — they vary
 shipment to shipment and staff update them when a shipment lands. This is not a
 blocker; it is an operating routine.
 

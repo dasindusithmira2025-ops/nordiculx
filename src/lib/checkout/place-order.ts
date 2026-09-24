@@ -16,6 +16,7 @@ import { priceOrder, STANDARD_SHIPPING } from '@/lib/cart/pricing';
 import type { PromotionLike } from '@/lib/cart/pricing';
 import { generateReference, generateToken, hashToken } from '@/lib/tokens';
 import type { AddressInput } from '@/lib/validation';
+import { DEFAULT_CURRENCY } from '@/lib/money';
 
 /**
  * Order placement.
@@ -234,7 +235,7 @@ export async function placeOrder(
           phone: input.phone,
           status: 'pending_payment',
           paymentStatus: 'pending',
-          currency: 'USD',
+          currency: DEFAULT_CURRENCY,
           subtotal: pricing.subtotal,
           discountTotal: pricing.discountTotal,
           shippingTotal: pricing.shippingTotal,
@@ -296,7 +297,7 @@ export async function placeOrder(
         provider: 'pending',
         status: 'pending',
         amount: pricing.grandTotal,
-        currency: 'USD',
+        currency: DEFAULT_CURRENCY,
       });
 
       await tx.insert(trackingEvents).values({

@@ -74,7 +74,7 @@ test.describe('product detail', () => {
       page.getByRole('heading', { level: 1, name: product.name }),
     ).toBeVisible();
 
-    const price = page.getByText(/^\$/).first();
+    const price = page.getByText(/^LKR/).first();
     await expect(price).toBeVisible();
 
     // Sizes only exist on a multi-variant product; the live catalogue ships
@@ -102,7 +102,7 @@ test.describe('product detail', () => {
 
     expect(data).toBeTruthy();
     expect(data.name).toBe(product.name);
-    expect(data.offers.priceCurrency).toBe('USD');
+    expect(data.offers.priceCurrency).toBe('LKR');
   });
 });
 

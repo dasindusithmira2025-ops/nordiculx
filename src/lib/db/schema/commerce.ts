@@ -221,7 +221,7 @@ export const orders = pgTable(
     status: orderStatusEnum().notNull().default('pending_payment'),
     paymentStatus: paymentStatusEnum().notNull().default('pending'),
 
-    currency: text().notNull().default('USD'),
+    currency: text().notNull().default('LKR'),
 
     /* --- server-computed totals, all in cents --------------------------- */
     subtotal: integer().notNull(),
@@ -345,7 +345,7 @@ export const payments = pgTable(
 
     status: paymentStatusEnum().notNull().default('pending'),
     amount: integer().notNull(),
-    currency: text().notNull().default('USD'),
+    currency: text().notNull().default('LKR'),
 
     /**
      * Display-only remnants: last four digits and card brand. Storing a full

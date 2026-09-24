@@ -12,6 +12,8 @@ import { WishlistButton } from './wishlist-button';
 import { BackInStockForm } from './back-in-stock-form';
 import { Badge, Rating } from '@/components/ui/display';
 import { Button } from '@/components/ui/button';
+import { STANDARD_SHIPPING } from '@/lib/cart/pricing';
+import { formatMoney } from '@/lib/money';
 import { CheckIcon, TruckIcon } from '@/components/ui/icons';
 
 /**
@@ -278,10 +280,13 @@ export function ProductDetail({
               initiallyWishlisted={wishlisted}
               variant="inline"
             />
-            <p className="text-fg-subtle inline-flex items-center gap-2 text-xs">
-              <TruckIcon width={15} height={15} />
-              Free delivery over $100
-            </p>
+            {STANDARD_SHIPPING.freeAboveSubtotal !== null ? (
+              <p className="text-fg-subtle inline-flex items-center gap-2 text-xs">
+                <TruckIcon width={15} height={15} />
+                Free delivery over{' '}
+                {formatMoney(STANDARD_SHIPPING.freeAboveSubtotal)}
+              </p>
+            ) : null}
           </div>
         </div>
 

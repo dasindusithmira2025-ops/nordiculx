@@ -62,7 +62,7 @@ export function ReturnDecision({
       </label>
 
       <label className="block">
-        <span className="eyebrow text-fg-subtle">Refund (USD)</span>
+        <span className="eyebrow text-fg-subtle">Refund (LKR)</span>
         <input
           name="refundAmount"
           inputMode="decimal"

@@ -68,7 +68,7 @@ price range ignores its own bounds for the same reason.
 
 Integer minor units (cents) everywhere. `src/lib/money.ts` refuses non-integer
 amounts and refuses to mix currencies. The customer catalogue currently presents
-prices in USD; admin and storefront mutations keep using integer cents rather
+prices in LKR; admin and storefront mutations keep using integer cents rather
 than floating-point arithmetic.
 
 ## Payments

@@ -80,8 +80,8 @@ describe('formatMoney', () => {
     expect(formatMoney(890000)).not.toContain('.00');
   });
 
-  it('formats catalogue prices as US dollars by default', () => {
-    expect(formatMoney(1999)).toBe('$19.99');
+  it('formats catalogue prices as Sri Lankan rupees by default', () => {
+    expect(formatMoney(1999)).toBe('LKR 19.99');
   });
 
   it('keeps decimals when the amount has cents', () => {

@@ -308,6 +308,6 @@ export function promotionRejectionMessage(reason: PromotionRejection): string {
 export const STANDARD_SHIPPING: ShippingRate = {
   method: 'standard',
   label: 'Standard island-wide delivery',
-  amount: 4500,
-  freeAboveSubtotal: 10000,
+  amount: 45_000,
+  freeAboveSubtotal: 1_500_000,
 };

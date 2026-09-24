@@ -56,7 +56,7 @@ export function Price({
   );
 }
 
-/** Unit price, e.g. "$2.96 / 10ml" — the honest way to compare sizes. */
+/** Unit price, e.g. "LKR 2.96 / 10ml" — the honest way to compare sizes. */
 export function UnitPrice({
   amount,
   volumeMl,

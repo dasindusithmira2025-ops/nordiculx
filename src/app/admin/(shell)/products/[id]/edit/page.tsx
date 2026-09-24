@@ -313,7 +313,7 @@ function VariantFields({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Cell label="Price (USD)">
+        <Cell label="Price (LKR)">
           <input
             name="price"
             inputMode="decimal"
@@ -322,7 +322,7 @@ function VariantFields({
             className={adminField}
           />
         </Cell>
-        <Cell label="Sale price (USD)" hint="Blank means not on sale.">
+        <Cell label="Sale price (LKR)" hint="Blank means not on sale.">
           <input
             name="salePrice"
             inputMode="decimal"
@@ -331,7 +331,7 @@ function VariantFields({
           />
         </Cell>
         <Cell
-          label="RRP (USD)"
+          label="RRP (LKR)"
           hint="Struck through, when the brand publishes one."
         >
           <input

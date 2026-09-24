@@ -231,11 +231,19 @@ describe('apportionDiscount', () => {
 
 describe('calculateShipping', () => {
   it('charges the standard rate below the free threshold', () => {
-    expect(calculateShipping(STANDARD_SHIPPING, 5000, null)).toBe(4500);
+    expect(calculateShipping(STANDARD_SHIPPING, 5000, null)).toBe(
+      STANDARD_SHIPPING.amount,
+    );
   });
 
   it('is free at or above the threshold', () => {
-    expect(calculateShipping(STANDARD_SHIPPING, 10000, null)).toBe(0);
+    expect(
+      calculateShipping(
+        STANDARD_SHIPPING,
+        STANDARD_SHIPPING.freeAboveSubtotal!,
+        null,
+      ),
+    ).toBe(0);
   });
 
   it('is free with a free-shipping promotion regardless of subtotal', () => {
@@ -245,7 +253,13 @@ describe('calculateShipping', () => {
 
   it('uses the discounted subtotal for the threshold, not the original', () => {
     // A discount that drops the basket below the threshold reinstates shipping.
-    expect(calculateShipping(STANDARD_SHIPPING, 9999, null)).toBe(4500);
+    expect(
+      calculateShipping(
+        STANDARD_SHIPPING,
+        STANDARD_SHIPPING.freeAboveSubtotal! - 1,
+        null,
+      ),
+    ).toBe(STANDARD_SHIPPING.amount);
   });
 });
 
@@ -257,8 +271,8 @@ describe('priceOrder', () => {
     });
     expect(result.subtotal).toBe(5000);
     expect(result.discountTotal).toBe(0);
-    expect(result.shippingTotal).toBe(4500);
-    expect(result.grandTotal).toBe(9500);
+    expect(result.shippingTotal).toBe(STANDARD_SHIPPING.amount);
+    expect(result.grandTotal).toBe(5000 + STANDARD_SHIPPING.amount);
   });
 
   it('ignores an expired promotion rather than applying it', () => {
@@ -278,7 +292,7 @@ describe('priceOrder', () => {
       shippingRate: STANDARD_SHIPPING,
     });
     expect(result.discountTotal).toBe(500);
-    expect(result.grandTotal).toBe(5000 - 500 + 4500);
+    expect(result.grandTotal).toBe(5000 - 500 + STANDARD_SHIPPING.amount);
     expect(result.appliedPromotion?.code).toBe('SAVE');
   });
 
@@ -305,6 +319,6 @@ describe('priceOrder', () => {
   it('prices an empty basket as zero rather than NaN', () => {
     const result = priceOrder({ lines: [], shippingRate: STANDARD_SHIPPING });
     expect(result.subtotal).toBe(0);
-    expect(result.grandTotal).toBe(4500);
+    expect(result.grandTotal).toBe(STANDARD_SHIPPING.amount);
   });
 });

@@ -244,8 +244,8 @@ export default async function AdminProductsPage({
             >
               <option value="">Choose action</option>
               <option value="set_price">Set exact price</option>
-              <option value="increase_amount">Increase price by USD</option>
-              <option value="decrease_amount">Decrease price by USD</option>
+              <option value="increase_amount">Increase price by LKR</option>
+              <option value="decrease_amount">Decrease price by LKR</option>
               <option value="increase_percent">Increase price by %</option>
               <option value="decrease_percent">Decrease price by %</option>
               <option value="clear_sale">Clear sale price</option>
@@ -401,7 +401,7 @@ export default async function AdminProductsPage({
                   </td>
                   <td className="py-4 align-top">
                     <label>
-                      <span className="sr-only">Regular USD price</span>
+                      <span className="sr-only">Regular LKR price</span>
                       <input
                         form={formId}
                         name="price"
@@ -416,7 +416,7 @@ export default async function AdminProductsPage({
                   </td>
                   <td className="py-4 align-top">
                     <label>
-                      <span className="sr-only">Sale USD price</span>
+                      <span className="sr-only">Sale LKR price</span>
                       <input
                         form={formId}
                         name="salePrice"
@@ -556,7 +556,7 @@ export default async function AdminProductsPage({
               />
             </label>
             <label>
-              <span className="eyebrow text-fg-subtle">USD price</span>
+              <span className="eyebrow text-fg-subtle">LKR price</span>
               <input
                 name="price"
                 inputMode="decimal"

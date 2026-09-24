@@ -268,7 +268,7 @@ Both were pre-existing, found by testing rather than by reading:
 - The live working catalogue contains 87 canonical Nordic Lux products, 11 real
   brands, 0 fake reviews and 0 demo catalogue products.
 - All 87 products are published. The client's shipment-by-shipment pricing
-  decision means the default USD catalogue prices are temporary operational
+  decision means the default LKR catalogue prices are temporary operational
   prices, not historically verified retail prices.
 - Staff can update product prices, sale prices, stock movements and publication
   state from `/admin/products`; ordinary shipment updates do not require code

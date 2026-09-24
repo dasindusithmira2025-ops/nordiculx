@@ -17,6 +17,7 @@ import { Prose, Rating, SectionHeading } from '@/components/ui/display';
 import { ReviewForm } from '@/components/commerce/review-form';
 import { reviewEligibility } from '@/lib/reviews';
 import { trackEvent } from '@/lib/analytics';
+import { DEFAULT_CURRENCY } from '@/lib/money';
 import { CheckIcon } from '@/components/ui/icons';
 
 export async function generateMetadata({
@@ -63,7 +64,7 @@ function productJsonLd(product: ProductDetailView) {
     image: product.media.map((m) => `${publicConfig.appUrl}${m.url}`),
     offers: {
       '@type': 'AggregateOffer',
-      priceCurrency: 'USD',
+      priceCurrency: DEFAULT_CURRENCY,
       lowPrice: (product.effectivePrice / 100).toFixed(2),
       highPrice: (
         Math.max(...product.variants.map((v) => v.effectivePrice), 0) / 100

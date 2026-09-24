@@ -3,13 +3,13 @@
  *
  * Every monetary amount in Nordic Lux — database column, API payload, cart
  * line, order total — is an INTEGER number of minor units (cents). Floating
- * point never touches a price. `1999` is USD 19.99.
+ * point never touches a price. `1999` is LKR 19.99.
  *
  * Rounding rule: half-up on the minor unit, applied once, at the point a
  * percentage is turned into an amount. Never round twice.
  */
 
-export const DEFAULT_CURRENCY = 'USD' as const;
+export const DEFAULT_CURRENCY = 'LKR' as const;
 
 export type Money = {
   /** Integer minor units. Negative values are legal (discounts, refunds). */
