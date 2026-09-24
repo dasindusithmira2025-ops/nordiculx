@@ -108,6 +108,9 @@ export function guestOrderAccessEmail(options: {
   const text = [
     `Here is the link to your order.`,
     ``,
+    `The order is confirmed only once payment has gone through — the link`,
+    `shows whether it has. If you did not finish paying, nothing will be sent.`,
+    ``,
     line('Order', options.reference),
     ``,
     `View it here`,
@@ -121,7 +124,7 @@ export function guestOrderAccessEmail(options: {
 
   return {
     to: options.email,
-    subject: `Your ${publicConfig.appName} order ${options.reference}`,
+    subject: `Link to your ${publicConfig.appName} order ${options.reference}`,
     text,
   };
 }

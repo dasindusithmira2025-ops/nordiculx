@@ -24,6 +24,7 @@ import {
 import { requireStaff } from '@/lib/auth';
 import { recordAudit } from '@/lib/admin/audit';
 import { getOrderByReference } from '@/lib/orders';
+import { canMoveOrderTo } from '@/lib/orders/fulfilment';
 import { refreshProductRating } from '@/lib/reviews';
 import { notifyRestock } from '@/lib/back-in-stock';
 import { sendMail } from '@/lib/mail';
@@ -576,7 +577,11 @@ export async function updateOrderStatus(
 
   const result = await db.transaction(async (tx) => {
     const rows = await tx
-      .select({ id: orders.id, status: orders.status })
+      .select({
+        id: orders.id,
+        status: orders.status,
+        paymentStatus: orders.paymentStatus,
+      })
       .from(orders)
       .where(eq(orders.reference, reference))
       .for('update')
@@ -584,6 +589,15 @@ export async function updateOrderStatus(
 
     const order = rows[0];
     if (!order) return { ok: false as const, error: 'Order not found.' };
+
+    // Checked on the locked row, so a payment landing mid-request is seen.
+    if (!canMoveOrderTo(next, order.paymentStatus)) {
+      return {
+        ok: false as const,
+        error:
+          'This order has not been paid. It can only be left awaiting payment or cancelled.',
+      };
+    }
 
     // A no-op must not write an audit row or a tracking event — a timeline that
     // records changes that did not happen is worse than no timeline.
