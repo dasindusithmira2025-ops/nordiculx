@@ -34,6 +34,9 @@ const serverSchema = z.object({
   // --- application -------------------------------------------------------
   APP_URL: z.url().default('http://localhost:3000'),
   APP_NAME: z.string().default('Nordic Lux'),
+  INVOICE_SELLER_NAME: z.string().optional(),
+  INVOICE_SELLER_ADDRESS: z.string().optional(),
+  INVOICE_SELLER_TAX_ID: z.string().optional(),
 
   // --- database ----------------------------------------------------------
   DATABASE_URL: z
@@ -89,6 +92,19 @@ const serverSchema = z.object({
 
   // --- integrations ------------------------------------------------------
   WHATSAPP_NUMBER: z.string().default('94770130299'),
+  WHATSAPP_CLOUD_API_ENABLED: bool,
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_API_VERSION: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    z
+      .string()
+      .regex(/^v\d+\.\d+$/)
+      .optional(),
+  ),
+  WHATSAPP_ORDER_TEMPLATE_NAME: z.string().optional(),
+  WHATSAPP_ORDER_TEMPLATE_LANGUAGE: z.string().optional(),
+  CRON_SECRET: z.string().optional(),
   ANALYTICS_ENABLED: bool,
 
   // --- social profiles ---------------------------------------------------
@@ -135,7 +151,37 @@ function assertProductionInvariants(env: ServerEnv): string[] {
     }
   }
 
+  if (env.WHATSAPP_CLOUD_API_ENABLED) {
+    if (!env.WHATSAPP_ACCESS_TOKEN)
+      errors.push('WHATSAPP_ACCESS_TOKEN is required when WhatsApp is enabled');
+    if (!env.WHATSAPP_PHONE_NUMBER_ID)
+      errors.push(
+        'WHATSAPP_PHONE_NUMBER_ID is required when WhatsApp is enabled',
+      );
+    if (!env.WHATSAPP_API_VERSION)
+      errors.push('WHATSAPP_API_VERSION is required when WhatsApp is enabled');
+    if (!env.WHATSAPP_ORDER_TEMPLATE_NAME)
+      errors.push(
+        'WHATSAPP_ORDER_TEMPLATE_NAME is required when WhatsApp is enabled',
+      );
+    if (!env.WHATSAPP_ORDER_TEMPLATE_LANGUAGE)
+      errors.push(
+        'WHATSAPP_ORDER_TEMPLATE_LANGUAGE is required when WhatsApp is enabled',
+      );
+  }
+
   if (env.NODE_ENV !== 'production') return errors;
+
+  if (!env.WHATSAPP_CLOUD_API_ENABLED) {
+    errors.push(
+      'WHATSAPP_CLOUD_API_ENABLED=true is required in production for opted-in payment notifications',
+    );
+  }
+  if (!env.CRON_SECRET || env.CRON_SECRET.length < 32) {
+    errors.push(
+      'CRON_SECRET must contain at least 32 characters in production',
+    );
+  }
 
   if (env.APP_URL.startsWith('http://')) {
     errors.push('APP_URL must use https:// in production');

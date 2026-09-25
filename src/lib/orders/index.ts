@@ -32,6 +32,7 @@ export type OrderSummary = {
 export type OrderDetail = OrderSummary & {
   email: string;
   phone: string | null;
+  whatsappOptIn: boolean;
   subtotal: number;
   discountTotal: number;
   shippingTotal: number;
@@ -115,6 +116,7 @@ async function loadOrderDetail(order: OrderRow): Promise<OrderDetail> {
     thumbnails: items.slice(0, 4).map((i) => i.image_url),
     email: order.email,
     phone: order.phone,
+    whatsappOptIn: order.whatsappOptIn,
     subtotal: order.subtotal,
     discountTotal: order.discountTotal,
     shippingTotal: order.shippingTotal,

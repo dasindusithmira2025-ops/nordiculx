@@ -10,16 +10,14 @@ import { confirmPayment } from '@/lib/checkout/confirm-payment';
 import { recordPaymentStarted } from '@/lib/checkout/payment-state';
 import { trackEvent } from '@/lib/analytics';
 import { getOrderByReference } from '@/lib/orders';
+import { dispatchPaidOrderNotifications } from '@/lib/notifications/paid-order';
 import {
   createPaymentIntent,
   paymentProvider,
   paymentsAreMocked,
 } from '@/lib/payments';
 import { sendMail } from '@/lib/mail';
-import {
-  orderConfirmationEmail,
-  guestOrderAccessEmail,
-} from '@/lib/mail/templates';
+import { guestOrderAccessEmail } from '@/lib/mail/templates';
 import { currentUser } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { publicEnv } from '@/lib/env';
@@ -48,6 +46,7 @@ const checkoutSchema = z.object({
   phone: phoneSchema,
   shipping: addressSchema,
   billingSameAsShipping: z.boolean(),
+  whatsappOptIn: z.boolean(),
   billing: addressSchema.optional(),
   note: z
     .string()
@@ -94,6 +93,7 @@ export async function submitCheckout(
     phone: formData.get('phone'),
     shipping: addressFrom(formData, 'shipping'),
     billingSameAsShipping: billingSame,
+    whatsappOptIn: formData.get('whatsappOptIn') === 'on',
     billing: billingSame ? undefined : addressFrom(formData, 'billing'),
     note: formData.get('note') ?? '',
   });
@@ -118,6 +118,7 @@ export async function submitCheckout(
     cart,
     email: parsed.data.email,
     phone: parsed.data.phone,
+    whatsappOptIn: parsed.data.whatsappOptIn,
     shippingAddress: parsed.data.shipping,
     billingAddress: parsed.data.billing ?? null,
     userId: user?.id ?? null,
@@ -168,13 +169,18 @@ export async function submitCheckout(
   if (intent.status === 'authorised') {
     // The mock driver settles immediately. A real provider stays pending until
     // its signed notification arrives — never on the strength of this response.
-    await confirmPayment({
+    const settlement = await confirmPayment({
       reference: placed.reference,
       status: 'paid',
       provider: intent.provider,
       providerReference: intent.providerReference,
       amount: placed.grandTotal,
     });
+    if (settlement.ok && settlement.changed) {
+      await dispatchPaidOrderNotifications({
+        orderReference: placed.reference,
+      });
+    }
   }
 
   await clearCartCookie();
@@ -212,11 +218,7 @@ export async function submitCheckout(
 
   const order = await getOrderByReference(placed.reference);
   if (order) {
-    // The order-confirmation message follows authoritative settlement. The
-    // guest-access message carries no claim that payment succeeded.
-    if (intent.status === 'authorised') {
-      await sendMail(orderConfirmationEmail(order));
-    }
+    // The guest-access message carries no claim that payment succeeded.
     if (placed.guestToken) {
       await sendMail(
         guestOrderAccessEmail({

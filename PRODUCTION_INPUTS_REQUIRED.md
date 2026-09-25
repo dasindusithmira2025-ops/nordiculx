@@ -48,7 +48,50 @@ dispatched, order lookup, and back-in-stock notification
 
 ---
 
-## 3. Domain and TLS
+## 3. WhatsApp Cloud API — paid order invoice
+
+| Variable | Where it comes from |
+| --- | --- |
+| `WHATSAPP_CLOUD_API_ENABLED=true` | Enable after the Meta setup below |
+| `WHATSAPP_ACCESS_TOKEN` | Long-lived system-user token with `whatsapp_business_messaging` |
+| `WHATSAPP_PHONE_NUMBER_ID` | Meta WhatsApp Business Platform phone-number ID |
+| `WHATSAPP_API_VERSION` | A currently supported Graph API version such as `vNN.0` |
+| `WHATSAPP_ORDER_TEMPLATE_NAME` | Exact name of the approved Meta template |
+| `WHATSAPP_ORDER_TEMPLATE_LANGUAGE` | Exact locale approved for that template |
+| `INVOICE_SELLER_NAME` | Legal seller name to print; defaults to `APP_NAME` |
+| `INVOICE_SELLER_ADDRESS` | Seller address to print on the order invoice |
+| `INVOICE_SELLER_TAX_ID` | Tax registration number, if applicable |
+
+Create and approve a **UTILITY** template with a **DOCUMENT** header and this
+body parameter order: `{{1}}` customer name, `{{2}}` order reference, `{{3}}`
+paid total. Suggested template body: `Hi {{1}}, payment for order {{2}} was
+successful. Total paid: {{3}}. Your invoice is attached. Thank you for
+shopping with Nordic Lux.` The server uploads the generated PDF invoice to
+Meta and sends it in the approved template. Checkout has an unchecked consent
+box; WhatsApp is only sent to customers who select it. The public
+`WHATSAPP_NUMBER` is the support chat number and is separate from the Cloud API
+sender ID.
+
+Production refuses to start while Cloud API delivery is disabled or missing
+credentials. Add the token through the hosting provider's secret store, never
+the repository or browser-visible `NEXT_PUBLIC_*` variables.
+
+Paid notifications are queued transactionally and attempted immediately after
+payment confirmation. Configure a scheduler to send `POST
+https://<domain>/api/cron/paid-order-notifications` at least once per minute
+with `Authorization: Bearer <CRON_SECRET>` so temporary provider or process
+failures are retried. Generate `CRON_SECRET` as a random value of at least 32
+characters and store it only in the hosting secret store.
+
+Run `npm run db:migrate` during deployment before serving the new build; it adds
+the WhatsApp consent field and notification outbox. The generated PDF is an
+order invoice/receipt from saved order data. Confirm the legal seller name,
+address and any required tax registration details before treating it as a
+statutory tax invoice.
+
+---
+
+## 4. Domain and TLS
 
 | Variable | Notes |
 | --- | --- |
@@ -61,18 +104,19 @@ are readable in transit.
 
 ---
 
-## 4. Secrets and infrastructure
+## 5. Secrets and infrastructure
 
 | Variable | Notes |
 | --- | --- |
 | `SESSION_SECRET` | **Generate a new one for production.** The value in `.env` is a development secret and is also the salt for the analytics visitor key |
 | `DATABASE_URL` | Production Postgres, with backups configured |
 | `REDIS_URL` | Required in production — without it rate limiting degrades to a per-process map, which does not hold across instances (`src/lib/rate-limit.ts`) |
+| `CRON_SECRET` | Random 32+ character secret for the scheduled notification retry endpoint |
 | `STORAGE_DRIVER` / `S3_*` | Only if media moves off the local filesystem |
 
 ---
 
-## 5. Legally reviewed copy
+## 6. Legally reviewed copy
 
 The pages exist, render, and are editable by staff at
 `/admin/content?tab=pages`. The **words** are placeholder text and have not been
@@ -91,7 +135,7 @@ clears the checkbox, so the outstanding ones are visible at a glance.
 
 ---
 
-## 6. Catalogue pricing
+## 7. Catalogue pricing
 
 Prices are LKR and provisional by the client's own decision — they vary
 shipment to shipment and staff update them when a shipment lands. This is not a
@@ -105,7 +149,7 @@ blocker; it is an operating routine.
 
 ---
 
-## 7. Business details in copy
+## 8. Business details in copy
 
 - `WHATSAPP_NUMBER` / `NEXT_PUBLIC_WHATSAPP_NUMBER` — currently a development
   number.
@@ -115,7 +159,7 @@ blocker; it is an operating routine.
 
 ---
 
-## 8. Social profile URLs
+## 9. Social profile URLs
 
 **Supplied.** The client's exact Facebook, TikTok and Instagram URLs ship as
 defaults in `src/lib/social.ts`. They render as the "Follow Nordic Lux" block
@@ -130,7 +174,7 @@ the desktop header — no configuration needed.
 
 ---
 
-## 9. Merchandising update — one-off script
+## 10. Merchandising update — one-off script
 
 The 2026 merchandising change (Skincare navigation, Pantry retirement, Top
 Selling Brands) ships as `npm run merchandising:update`. It is DATA, not

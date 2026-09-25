@@ -22,6 +22,20 @@
       "when": 1789933124333,
       "tag": "0002_currency_lkr",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790350825665,
+      "tag": "0003_whatsapp_opt_in",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790351194798,
+      "tag": "0004_notification_outbox",
+      "breakpoints": true
     }
   ]
 }

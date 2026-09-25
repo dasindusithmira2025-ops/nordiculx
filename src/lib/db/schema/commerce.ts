@@ -217,6 +217,8 @@ export const orders = pgTable(
 
     email: text().notNull(),
     phone: text(),
+    /** Explicit checkout consent for transactional WhatsApp updates. */
+    whatsappOptIn: boolean().notNull().default(false),
 
     status: orderStatusEnum().notNull().default('pending_payment'),
     paymentStatus: paymentStatusEnum().notNull().default('pending'),
@@ -427,6 +429,46 @@ export const trackingEvents = pgTable(
   (t) => [index('tracking_events_order_idx').on(t.orderId, t.occurredAt)],
 );
 
+/** Transactional notification outbox. Payment settlement writes these rows in
+ * the same transaction, so a process restart cannot lose a paid-order send. */
+export const notificationDeliveries = pgTable(
+  'notification_deliveries',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    orderId: uuid()
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    orderReference: text().notNull(),
+    channel: text().notNull(),
+    status: text().notNull().default('pending'),
+    attemptCount: integer().notNull().default(0),
+    nextAttemptAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastError: text(),
+    sentAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('notification_deliveries_order_channel_unique').on(
+      t.orderId,
+      t.channel,
+    ),
+    index('notification_deliveries_ready_idx').on(t.status, t.nextAttemptAt),
+    check(
+      'notification_deliveries_channel_valid',
+      sql`${t.channel} IN ('email', 'whatsapp')`,
+    ),
+    check(
+      'notification_deliveries_status_valid',
+      sql`${t.status} IN ('pending', 'sending', 'sent', 'failed')`,
+    ),
+    check(
+      'notification_deliveries_attempts_non_negative',
+      sql`${t.attemptCount} >= 0`,
+    ),
+  ],
+);
+
 /* --- returns -------------------------------------------------------------- */
 
 export const returnStatusEnum = pgEnum('return_status', [
@@ -515,6 +557,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   payments: many(payments),
   shipments: many(shipments),
   trackingEvents: many(trackingEvents),
+  notificationDeliveries: many(notificationDeliveries),
   returnRequests: many(returnRequests),
   promotion: one(promotions, {
     fields: [orders.promotionId],

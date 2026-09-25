@@ -25,7 +25,7 @@ export function orderConfirmationEmail(order: OrderDetail): MailMessage {
     .map(
       (item) =>
         `  ${item.quantity} × ${item.brandName} ${item.productName} (${item.variantName})` +
-        `  ${formatMoney(item.lineTotal)}`,
+        `  ${formatMoney(item.lineTotal, order.currency)}`,
     )
     .join('\n');
 
@@ -35,22 +35,31 @@ export function orderConfirmationEmail(order: OrderDetail): MailMessage {
     `Thank you — we have your order.`,
     ``,
     line('Order', order.reference),
-    line('Total', formatMoney(order.grandTotal)),
+    line('Total', formatMoney(order.grandTotal, order.currency)),
     ``,
     `What you ordered`,
     items,
     ``,
-    line('Subtotal', formatMoney(order.subtotal)),
+    line('Subtotal', formatMoney(order.subtotal, order.currency)),
     ...(order.discountTotal > 0
-      ? [line('Discount', `−${formatMoney(order.discountTotal)}`)]
+      ? [
+          line(
+            'Discount',
+            `-${formatMoney(order.discountTotal, order.currency)}`,
+          ),
+        ]
       : []),
     line(
       'Delivery',
       order.shippingTotal === 0
         ? 'Complimentary'
-        : formatMoney(order.shippingTotal),
+        : formatMoney(order.shippingTotal, order.currency),
     ),
-    line('Total', formatMoney(order.grandTotal)),
+    ...(order.taxTotal > 0
+      ? [line('Tax', formatMoney(order.taxTotal, order.currency))]
+      : []),
+    line('Total', formatMoney(order.grandTotal, order.currency)),
+    `A PDF invoice is attached to this email.`,
     ``,
     `Delivering to`,
     `  ${address.recipientName}`,

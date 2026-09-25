@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "whatsapp_opt_in" boolean DEFAULT false NOT NULL;

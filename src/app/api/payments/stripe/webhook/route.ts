@@ -1,9 +1,7 @@
 import { confirmPayment } from '@/lib/checkout/confirm-payment';
 import { cancelExpiredPayment } from '@/lib/checkout/cancel-payment';
 import { getStripePaymentContext } from '@/lib/checkout/payment-state';
-import { getOrderByReference } from '@/lib/orders';
-import { sendMail } from '@/lib/mail';
-import { orderConfirmationEmail } from '@/lib/mail/templates';
+import { dispatchPaidOrderNotifications } from '@/lib/notifications/paid-order';
 import {
   constructStripeEvent,
   stripeEventToTransition,
@@ -79,8 +77,9 @@ export async function POST(request: Request) {
   }
 
   if (result.changed && transition.kind === 'paid') {
-    const order = await getOrderByReference(transition.reference);
-    if (order) await sendMail(orderConfirmationEmail(order));
+    await dispatchPaidOrderNotifications({
+      orderReference: transition.reference,
+    });
   }
 
   console.warn(

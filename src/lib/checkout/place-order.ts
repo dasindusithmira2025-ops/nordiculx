@@ -46,6 +46,7 @@ export type PlaceOrderInput = {
   cart: CartView;
   email: string;
   phone: string | null;
+  whatsappOptIn: boolean;
   shippingAddress: AddressInput;
   /** Omitted when billing is the same as shipping. */
   billingAddress?: AddressInput | null;
@@ -233,6 +234,7 @@ export async function placeOrder(
           guestAccessTokenHash: guestToken ? hashToken(guestToken) : null,
           email: input.email,
           phone: input.phone,
+          whatsappOptIn: input.whatsappOptIn,
           status: 'pending_payment',
           paymentStatus: 'pending',
           currency: DEFAULT_CURRENCY,

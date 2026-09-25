@@ -1,8 +1,6 @@
 import { verifyNotification } from '@/lib/payments';
 import { confirmPayment } from '@/lib/checkout/confirm-payment';
-import { getOrderByReference } from '@/lib/orders';
-import { sendMail } from '@/lib/mail';
-import { orderConfirmationEmail } from '@/lib/mail/templates';
+import { dispatchPaidOrderNotifications } from '@/lib/notifications/paid-order';
 
 /**
  * Payment provider notification.
@@ -65,8 +63,9 @@ export async function POST(request: Request) {
   // Only on the transition, never on a retry — otherwise a provider retrying for
   // an hour would send an hour of duplicate confirmation emails.
   if (result.changed && verified.status === 'paid') {
-    const order = await getOrderByReference(verified.reference);
-    if (order) await sendMail(orderConfirmationEmail(order));
+    await dispatchPaidOrderNotifications({
+      orderReference: verified.reference,
+    });
   }
 
   return new Response(null, { status: 200 });

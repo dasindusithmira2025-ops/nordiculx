@@ -26,6 +26,11 @@ export type MailMessage = {
   text: string;
   html?: string;
   replyTo?: string;
+  attachments?: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }[];
 };
 
 let transporter: Transporter | null = null;
@@ -69,6 +74,11 @@ export async function sendMail(message: MailMessage): Promise<SendResult> {
       text: message.text,
       html: message.html,
       replyTo: message.replyTo,
+      attachments: message.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+      })),
     });
     return { sent: true };
   } catch (error) {
