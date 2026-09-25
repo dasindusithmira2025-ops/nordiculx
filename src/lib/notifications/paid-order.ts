@@ -6,7 +6,6 @@ import { notificationDeliveries } from '@/lib/db/schema';
 import { sendMail } from '@/lib/mail';
 import { orderConfirmationEmail } from '@/lib/mail/templates';
 import { getOrderByReference } from '@/lib/orders';
-import { sendPaidOrderInvoiceOnWhatsApp } from '@/lib/whatsapp/cloud-api';
 
 const MAX_ATTEMPTS = 8;
 const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000];
@@ -120,6 +119,20 @@ export async function dispatchPaidOrderNotifications(options?: {
     const outcomes = await Promise.all(
       batch.map(async (delivery) => {
         try {
+          if (delivery.channel !== 'email') {
+            const now = new Date();
+            await db
+              .update(notificationDeliveries)
+              .set({
+                status: 'failed',
+                nextAttemptAt: now,
+                lastError: 'WhatsApp notifications were disabled',
+                updatedAt: now,
+              })
+              .where(eq(notificationDeliveries.id, delivery.id));
+            return false;
+          }
+
           const order = await getOrderByReference(delivery.orderReference);
           if (!order || order.paymentStatus !== 'paid') {
             throw new Error('paid order snapshot is unavailable');
@@ -133,24 +146,16 @@ export async function dispatchPaidOrderNotifications(options?: {
           const pdf = await invoice;
           const filename = `${order.reference}-invoice.pdf`;
 
-          const result =
-            delivery.channel === 'email'
-              ? await sendMail({
-                  ...orderConfirmationEmail(order),
-                  attachments: [
-                    {
-                      filename,
-                      content: pdf,
-                      contentType: 'application/pdf',
-                    },
-                  ],
-                })
-              : delivery.channel === 'whatsapp'
-                ? await sendPaidOrderInvoiceOnWhatsApp(order, pdf)
-                : {
-                    sent: false,
-                    reason: `unsupported channel ${delivery.channel}`,
-                  };
+          const result = await sendMail({
+            ...orderConfirmationEmail(order),
+            attachments: [
+              {
+                filename,
+                content: pdf,
+                contentType: 'application/pdf',
+              },
+            ],
+          });
 
           await recordAttempt(delivery, result.sent, result.reason);
           return result.sent;

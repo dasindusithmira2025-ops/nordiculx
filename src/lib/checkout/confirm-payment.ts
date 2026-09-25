@@ -57,8 +57,6 @@ export async function confirmPayment(
     const rows = await tx
       .select({
         id: orders.id,
-        phone: orders.phone,
-        whatsappOptIn: orders.whatsappOptIn,
         grandTotal: orders.grandTotal,
         paymentStatus: orders.paymentStatus,
         currency: orders.currency,
@@ -189,25 +187,13 @@ export async function confirmPayment(
       source: 'system',
     });
 
-    const deliveries = [
-      {
+    await tx
+      .insert(notificationDeliveries)
+      .values({
         orderId: order.id,
         orderReference: input.reference,
         channel: 'email',
-      },
-      ...(order.whatsappOptIn && order.phone
-        ? [
-            {
-              orderId: order.id,
-              orderReference: input.reference,
-              channel: 'whatsapp',
-            },
-          ]
-        : []),
-    ];
-    await tx
-      .insert(notificationDeliveries)
-      .values(deliveries)
+      })
       .onConflictDoNothing();
 
     return { ok: true as const, orderId: order.id, changed: true };

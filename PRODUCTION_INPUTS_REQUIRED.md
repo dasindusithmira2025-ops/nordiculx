@@ -48,46 +48,25 @@ dispatched, order lookup, and back-in-stock notification
 
 ---
 
-## 3. WhatsApp Cloud API — paid order invoice
+## 3. Paid order email and invoice
 
 | Variable | Where it comes from |
 | --- | --- |
-| `WHATSAPP_CLOUD_API_ENABLED=true` | Enable after the Meta setup below |
-| `WHATSAPP_ACCESS_TOKEN` | Long-lived system-user token with `whatsapp_business_messaging` |
-| `WHATSAPP_PHONE_NUMBER_ID` | Meta WhatsApp Business Platform phone-number ID |
-| `WHATSAPP_API_VERSION` | A currently supported Graph API version such as `vNN.0` |
-| `WHATSAPP_ORDER_TEMPLATE_NAME` | Exact name of the approved Meta template |
-| `WHATSAPP_ORDER_TEMPLATE_LANGUAGE` | Exact locale approved for that template |
 | `INVOICE_SELLER_NAME` | Legal seller name to print; defaults to `APP_NAME` |
 | `INVOICE_SELLER_ADDRESS` | Seller address to print on the order invoice |
 | `INVOICE_SELLER_TAX_ID` | Tax registration number, if applicable |
 
-Create and approve a **UTILITY** template with a **DOCUMENT** header and this
-body parameter order: `{{1}}` customer name, `{{2}}` order reference, `{{3}}`
-paid total. Suggested template body: `Hi {{1}}, payment for order {{2}} was
-successful. Total paid: {{3}}. Your invoice is attached. Thank you for
-shopping with Nordic Lux.` The server uploads the generated PDF invoice to
-Meta and sends it in the approved template. Checkout has an unchecked consent
-box; WhatsApp is only sent to customers who select it. The public
-`WHATSAPP_NUMBER` is the support chat number and is separate from the Cloud API
-sender ID.
+Paid order confirmations with a PDF invoice are queued transactionally and
+attempted immediately after payment confirmation. Configure a scheduler to send
+`POST https://<domain>/api/cron/paid-order-notifications` at least once per
+minute with `Authorization: Bearer <CRON_SECRET>` so temporary provider or
+process failures are retried. Generate `CRON_SECRET` as a random value of at
+least 32 characters and store it only in the hosting secret store.
 
-Production refuses to start while Cloud API delivery is disabled or missing
-credentials. Add the token through the hosting provider's secret store, never
-the repository or browser-visible `NEXT_PUBLIC_*` variables.
-
-Paid notifications are queued transactionally and attempted immediately after
-payment confirmation. Configure a scheduler to send `POST
-https://<domain>/api/cron/paid-order-notifications` at least once per minute
-with `Authorization: Bearer <CRON_SECRET>` so temporary provider or process
-failures are retried. Generate `CRON_SECRET` as a random value of at least 32
-characters and store it only in the hosting secret store.
-
-Run `npm run db:migrate` during deployment before serving the new build; it adds
-the WhatsApp consent field and notification outbox. The generated PDF is an
-order invoice/receipt from saved order data. Confirm the legal seller name,
-address and any required tax registration details before treating it as a
-statutory tax invoice.
+Run `npm run db:migrate` during deployment before serving the new build to apply
+pending database migrations. The generated PDF is an order invoice/receipt from
+saved order data. Confirm the legal seller name, address and any required tax
+registration details before treating it as a statutory tax invoice.
 
 ---
 

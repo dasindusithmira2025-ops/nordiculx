@@ -217,7 +217,7 @@ export const orders = pgTable(
 
     email: text().notNull(),
     phone: text(),
-    /** Explicit checkout consent for transactional WhatsApp updates. */
+    /** Legacy preference retained for compatibility; checkout no longer writes it. */
     whatsappOptIn: boolean().notNull().default(false),
 
     status: orderStatusEnum().notNull().default('pending_payment'),

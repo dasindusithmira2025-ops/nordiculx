@@ -82,7 +82,7 @@ export function CheckoutForm({
           </Field>
           <Field
             error={error('phone')}
-            hint="Used for delivery questions and WhatsApp if you opt in."
+            hint="Used for delivery questions."
           >
             <FieldLabel>Phone</FieldLabel>
             <Input
@@ -95,17 +95,6 @@ export function CheckoutForm({
             />
           </Field>
         </div>
-        <label className="text-fg mt-5 flex cursor-pointer items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            name="whatsappOptIn"
-            className="mt-0.5 size-3.5 shrink-0 accent-current"
-          />
-          <span>
-            I agree to receive my payment confirmation and invoice on WhatsApp
-            from Nordic Lux at this number.
-          </span>
-        </label>
       </section>
 
       <Rule />

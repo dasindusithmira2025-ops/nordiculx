@@ -46,7 +46,6 @@ const checkoutSchema = z.object({
   phone: phoneSchema,
   shipping: addressSchema,
   billingSameAsShipping: z.boolean(),
-  whatsappOptIn: z.boolean(),
   billing: addressSchema.optional(),
   note: z
     .string()
@@ -93,7 +92,6 @@ export async function submitCheckout(
     phone: formData.get('phone'),
     shipping: addressFrom(formData, 'shipping'),
     billingSameAsShipping: billingSame,
-    whatsappOptIn: formData.get('whatsappOptIn') === 'on',
     billing: billingSame ? undefined : addressFrom(formData, 'billing'),
     note: formData.get('note') ?? '',
   });
@@ -118,7 +116,6 @@ export async function submitCheckout(
     cart,
     email: parsed.data.email,
     phone: parsed.data.phone,
-    whatsappOptIn: parsed.data.whatsappOptIn,
     shippingAddress: parsed.data.shipping,
     billingAddress: parsed.data.billing ?? null,
     userId: user?.id ?? null,
