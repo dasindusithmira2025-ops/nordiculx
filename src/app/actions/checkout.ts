@@ -22,7 +22,7 @@ import {
 } from '@/lib/mail/templates';
 import { currentUser } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
-import { publicConfig } from '@/lib/public-config';
+import { publicEnv } from '@/lib/env';
 import { DEFAULT_CURRENCY } from '@/lib/money';
 import {
   actionError,
@@ -150,12 +150,12 @@ export async function submitCheckout(
     customerFirstName: parsed.data.shipping.recipientName.split(' ')[0] ?? '',
     customerLastName:
       parsed.data.shipping.recipientName.split(' ').slice(1).join(' ') || '-',
-    returnUrl: `${publicConfig.appUrl}/order/${placed.reference}`,
-    cancelUrl: `${publicConfig.appUrl}/order/${placed.reference}`,
+    returnUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
+    cancelUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
     notifyUrl:
       paymentProvider === 'payhere'
-        ? `${publicConfig.appUrl}/api/payments/notify`
-        : `${publicConfig.appUrl}/api/payments/stripe/webhook`,
+        ? `${publicEnv.appUrl}/api/payments/notify`
+        : `${publicEnv.appUrl}/api/payments/stripe/webhook`,
   });
 
   await recordPaymentStarted({
@@ -189,7 +189,7 @@ export async function submitCheckout(
     store.set(`nl_order_${placed.reference}`, placed.guestToken, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: publicConfig.appUrl.startsWith('https://'),
+      secure: publicEnv.appUrl.startsWith('https://'),
       path: '/',
       maxAge: 60 * 60 * 24 * 30,
     });
