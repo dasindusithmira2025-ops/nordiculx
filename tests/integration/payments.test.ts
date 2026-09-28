@@ -244,6 +244,73 @@ describe('payment confirmation transaction', () => {
         .where(eq(schema.inventoryItems.variantId, inventory.variantId));
     }
   });
+
+  it('keeps a cancelled order cancelled when its payment arrives late', async () => {
+    if (!available) {
+      console.warn('skipped (no database): late payment on cancelled order');
+      return;
+    }
+
+    const { eq } = await import('drizzle-orm');
+    const orderId = randomUUID();
+    const reference = `NL-LATE-${randomUUID().slice(0, 8).toUpperCase()}`;
+    const address = {
+      recipientName: 'Late Payer',
+      phone: '+94770000000',
+      line1: 'Test address',
+      city: 'Colombo',
+      country: 'LK',
+    };
+
+    await database.insert(schema.orders).values({
+      id: orderId,
+      reference,
+      email: 'late-payment@example.test',
+      status: 'cancelled',
+      paymentStatus: 'failed',
+      currency: 'LKR',
+      subtotal: 500000,
+      grandTotal: 500000,
+      shippingAddress: address,
+      billingAddress: address,
+    });
+    await database.insert(schema.payments).values({
+      orderId,
+      provider: 'payhere',
+      status: 'failed',
+      amount: 500000,
+      currency: 'LKR',
+    });
+
+    try {
+      const result = await confirmPayment({
+        reference,
+        status: 'paid',
+        provider: 'payhere',
+        providerReference: 'ph_late',
+        amount: 500000,
+      });
+      // Acknowledged so the provider stops retrying, but not a confirmation.
+      expect(result).toMatchObject({ ok: true, changed: false });
+
+      const [order] = await database
+        .select({
+          status: schema.orders.status,
+          paymentStatus: schema.orders.paymentStatus,
+        })
+        .from(schema.orders)
+        .where(eq(schema.orders.id, orderId));
+      expect(order).toEqual({ status: 'cancelled', paymentStatus: 'paid' });
+
+      const outbox = await database
+        .select({ id: schema.notificationDeliveries.id })
+        .from(schema.notificationDeliveries)
+        .where(eq(schema.notificationDeliveries.orderId, orderId));
+      expect(outbox).toHaveLength(0);
+    } finally {
+      await database.delete(schema.orders).where(eq(schema.orders.id, orderId));
+    }
+  });
 });
 
 afterAll(async () => {

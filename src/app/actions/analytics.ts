@@ -1,6 +1,7 @@
 'use server';
 
 import { trackEvent } from '@/lib/analytics';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * The one analytics entry point the browser may call.
@@ -18,6 +19,10 @@ export async function recordPageView(rawPath: string): Promise<void> {
   // mistyped link, or a token, none of which belong in analytics.
   const path = rawPath.split(/[?#]/)[0] ?? '/';
   if (!path.startsWith('/') || path.length > 200) return;
+
+  // Generous for a person browsing; stops a script filling the events table.
+  const limit = await rateLimit('page-view', { limit: 120, windowSeconds: 60 });
+  if (!limit.allowed) return;
 
   await trackEvent('page_view', undefined, { path });
 }

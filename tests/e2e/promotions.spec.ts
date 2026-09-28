@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { addToBag } from './fixtures';
+import { addToBag, registerCustomer } from './fixtures';
 
 /**
  * Promotions, from the staff screen that creates them to the money a customer
@@ -48,6 +48,7 @@ test.describe('promotions', () => {
 
     // Same browser, storefront session: staff and customer cookies are
     // separate, so no sign-out is needed.
+    await registerCustomer(page);
     await addToBag(page);
     await page.goto('/checkout');
 
@@ -89,6 +90,7 @@ test.describe('promotions', () => {
     await row.getByRole('button', { name: 'Turn off' }).click();
     await expect(row.getByRole('button', { name: 'Turn on' })).toBeVisible();
 
+    await registerCustomer(page);
     await addToBag(page);
     await page.goto('/checkout');
 
@@ -103,6 +105,7 @@ test.describe('promotions', () => {
   test('an unknown code is refused without revealing anything', async ({
     page,
   }) => {
+    await registerCustomer(page);
     await addToBag(page);
     await page.goto('/checkout');
 

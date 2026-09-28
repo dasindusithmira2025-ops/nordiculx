@@ -160,6 +160,14 @@ function assertProductionInvariants(env: ServerEnv): string[] {
       'PAYHERE_MERCHANT_SECRET is required when PAYMENT_DRIVER=payhere',
     );
   }
+  if (env.PAYMENT_DRIVER === 'payhere' && !env.PAYHERE_MERCHANT_ID) {
+    errors.push('PAYHERE_MERCHANT_ID is required when PAYMENT_DRIVER=payhere');
+  }
+  if (!env.REDIS_URL) {
+    errors.push(
+      'REDIS_URL is required in production — without it rate limits reset on every restart',
+    );
+  }
   if (env.MAIL_DRIVER === 'log') {
     errors.push(
       'MAIL_DRIVER=log cannot be used in production — configure SMTP',

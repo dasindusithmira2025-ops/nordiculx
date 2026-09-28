@@ -204,3 +204,26 @@ export function backInStockEmail(options: {
     text,
   };
 }
+
+/** A single-use, one-hour password-reset link. */
+export function passwordResetEmail(options: {
+  email: string;
+  token: string;
+}): MailMessage {
+  const text = [
+    `Someone asked to reset the password for this ${publicConfig.appName} account.`,
+    ``,
+    `Choose a new password here (the link works once, for one hour)`,
+    `  ${publicConfig.appUrl}/account/reset-password?token=${options.token}`,
+    ``,
+    `If it was not you, ignore this email — your password has not changed.`,
+    ``,
+    `— ${publicConfig.appName}`,
+  ].join('\n');
+
+  return {
+    to: options.email,
+    subject: `Reset your ${publicConfig.appName} password`,
+    text,
+  };
+}

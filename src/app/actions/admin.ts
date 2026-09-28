@@ -20,11 +20,13 @@ import {
   reviews,
   reviewStatusEnum,
   supportTickets,
+  type OrderStatus,
 } from '@/lib/db/schema';
 import { requireStaff } from '@/lib/auth';
 import { recordAudit } from '@/lib/admin/audit';
 import { getOrderByReference } from '@/lib/orders';
 import { canMoveOrderTo } from '@/lib/orders/fulfilment';
+import { releaseOrderReservation } from '@/lib/checkout/cancel-payment';
 import { refreshProductRating } from '@/lib/reviews';
 import { notifyRestock } from '@/lib/back-in-stock';
 import { sendMail } from '@/lib/mail';
@@ -561,6 +563,14 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
  * transaction with the status change, so stock can never disagree with the
  * order it was shipped against.
  */
+/** Statuses in which an order's units are reserved but not yet shipped. */
+const HOLDS_RESERVATION: readonly OrderStatus[] = [
+  'pending_payment',
+  'confirmed',
+  'preparing',
+  'packed',
+];
+
 export async function updateOrderStatus(
   formData: FormData,
 ): Promise<ActionResult> {
@@ -603,6 +613,16 @@ export async function updateOrderStatus(
     // records changes that did not happen is worse than no timeline.
     if (order.status === next) return { ok: true as const, changed: false };
 
+    // Cancelling returned the units to sale, so reopening would ship stock that
+    // may already be sold to somebody else. A cancelled order stays cancelled.
+    if (order.status === 'cancelled') {
+      return {
+        ok: false as const,
+        error:
+          'A cancelled order cannot be reopened. Its items have been returned to stock.',
+      };
+    }
+
     await tx
       .update(orders)
       .set({ status: next, updatedAt: new Date() })
@@ -614,6 +634,16 @@ export async function updateOrderStatus(
       message: note,
       source: 'staff',
     });
+
+    // Units stay reserved from checkout until dispatch. Cancelling before then
+    // must hand them back, or every cancelled order hides stock for good.
+    if (next === 'cancelled' && HOLDS_RESERVATION.includes(order.status)) {
+      await releaseOrderReservation(
+        tx,
+        order.id,
+        `Released when order ${reference} was cancelled`,
+      );
+    }
 
     // Dispatch is the moment stock genuinely leaves. Until now the units were
     // reserved but still on hand; here both counts fall together, in the same

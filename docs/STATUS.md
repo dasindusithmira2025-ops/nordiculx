@@ -165,7 +165,7 @@ production, and has been rendered in a browser and looked at.
 | `/account/addresses` | Address book CRUD in a native `<dialog>`, default handling                        |
 | `/account/wishlist` | Saved products, add-to-bag inline, honest out-of-stock state                       |
 | `/account/settings` | Details and password change (revokes every other session)                         |
-| `/checkout`        | One-page checkout, guest or signed-in; saved addresses preselected                  |
+| `/checkout`        | One-page checkout, signed-in customers only; saved addresses preselected           |
 | `/order/[reference]` | Confirmation, readable only by the owner or the guest cookie                     |
 | `/track`, `/track/[reference]` | Guest lookup; emails a fresh token rather than opening the order  |
 | `/api/payments/notify` | Signature-verified provider callback — the only path that marks an order paid  |

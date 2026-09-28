@@ -58,6 +58,7 @@ export async function confirmPayment(
       .select({
         id: orders.id,
         grandTotal: orders.grandTotal,
+        status: orders.status,
         paymentStatus: orders.paymentStatus,
         currency: orders.currency,
         provider: payments.provider,
@@ -112,6 +113,42 @@ export async function confirmPayment(
       order.paymentStatus === 'refunded' ||
       (order.paymentStatus === 'failed' && input.status === 'failed')
     ) {
+      return { ok: true as const, orderId: order.id, changed: false };
+    }
+
+    // Money arriving for an order that was already cancelled — its payment
+    // window lapsed and its stock went back on sale. Confirming it would ship
+    // units that may already be sold to somebody else, so the payment is
+    // recorded, the order stays cancelled, and staff refund or re-fulfil it.
+    if (input.status === 'paid' && order.status === 'cancelled') {
+      await tx
+        .update(payments)
+        .set({
+          provider: input.provider,
+          providerReference: input.providerReference,
+          status: 'paid',
+          method: input.method ?? null,
+          providerPayload: input.eventId
+            ? { ...payload, lastEventId: input.eventId }
+            : payload,
+          capturedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(payments.orderId, order.id));
+      await tx
+        .update(orders)
+        .set({ paymentStatus: 'paid', updatedAt: new Date() })
+        .where(eq(orders.id, order.id));
+      await tx.insert(trackingEvents).values({
+        orderId: order.id,
+        status: 'cancelled',
+        message:
+          'Payment received after this order was cancelled. Refund the customer or re-fulfil manually.',
+        source: 'system',
+      });
+      console.error(
+        `[payments] ${input.reference} was paid after cancellation — refund required`,
+      );
       return { ok: true as const, orderId: order.id, changed: false };
     }
 

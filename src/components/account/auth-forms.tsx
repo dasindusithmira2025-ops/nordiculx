@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
-import { register, signIn } from '@/app/actions/auth';
+import {
+  register,
+  requestPasswordReset,
+  resetPassword,
+  signIn,
+} from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel, Input } from '@/components/ui/field';
 import type { ActionResult } from '@/lib/validation';
@@ -64,6 +69,15 @@ export function SignInForm({ next }: { next?: string }) {
           required
         />
       </Field>
+
+      <p className="-mt-4 text-right text-sm">
+        <Link
+          href="/account/forgot-password"
+          className="text-fg-muted link-underline"
+        >
+          Forgot your password?
+        </Link>
+      </p>
 
       <Button
         type="submit"
@@ -178,6 +192,97 @@ export function RegisterForm({ next }: { next?: string }) {
           Sign in
         </Link>
       </p>
+    </form>
+  );
+}
+
+export function ForgotPasswordForm() {
+  const [state, formAction, pending] = useActionState<
+    ActionResult | null,
+    FormData
+  >(requestPasswordReset, null);
+
+  if (state?.ok) {
+    return (
+      <p role="status" className="text-fg-muted text-center text-base">
+        If that address has an account, a reset link is on its way. It works
+        once, for one hour. Check your spam folder if it has not arrived in a
+        few minutes.
+      </p>
+    );
+  }
+
+  return (
+    <form action={formAction} className="space-y-8">
+      <FormError state={state} />
+
+      <Field error={state?.ok === false ? state.fieldErrors?.email : null}>
+        <FieldLabel>Email address</FieldLabel>
+        <Input
+          type="email"
+          name="email"
+          autoComplete="email"
+          autoFocus
+          required
+        />
+      </Field>
+
+      <Button
+        type="submit"
+        size="lg"
+        fullWidth
+        loading={pending}
+        loadingLabel="Sending"
+      >
+        Email me a reset link
+      </Button>
+
+      <p className="text-fg-muted text-center text-sm">
+        Remembered it?{' '}
+        <Link href="/account/login" className="text-fg link-underline">
+          Sign in
+        </Link>
+      </p>
+    </form>
+  );
+}
+
+export function ResetPasswordForm({ token }: { token: string }) {
+  const [state, formAction, pending] = useActionState<
+    ActionResult | null,
+    FormData
+  >(resetPassword, null);
+
+  return (
+    <form action={formAction} className="space-y-8">
+      <input type="hidden" name="token" value={token} />
+
+      <FormError state={state} />
+
+      <Field
+        error={state?.ok === false ? state.fieldErrors?.password : null}
+        hint="At least 10 characters. Signing in with it signs every other device out."
+      >
+        <FieldLabel>New password</FieldLabel>
+        <Input
+          type="password"
+          name="password"
+          autoComplete="new-password"
+          minLength={10}
+          autoFocus
+          required
+        />
+      </Field>
+
+      <Button
+        type="submit"
+        size="lg"
+        fullWidth
+        loading={pending}
+        loadingLabel="Saving"
+      >
+        Set new password
+      </Button>
     </form>
   );
 }

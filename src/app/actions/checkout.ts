@@ -2,23 +2,20 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { getCart, clearCartCookie } from '@/lib/cart';
+import { getCart, clearCartCookie, reopenCart } from '@/lib/cart';
 import { placeOrder } from '@/lib/checkout/place-order';
 import { confirmPayment } from '@/lib/checkout/confirm-payment';
 import { recordPaymentStarted } from '@/lib/checkout/payment-state';
+import { cancelExpiredPayment } from '@/lib/checkout/cancel-payment';
 import { trackEvent } from '@/lib/analytics';
-import { getOrderByReference } from '@/lib/orders';
 import { dispatchPaidOrderNotifications } from '@/lib/notifications/paid-order';
 import {
   createPaymentIntent,
   paymentProvider,
   paymentsAreMocked,
 } from '@/lib/payments';
-import { sendMail } from '@/lib/mail';
-import { guestOrderAccessEmail } from '@/lib/mail/templates';
-import { currentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { publicEnv } from '@/lib/env';
 import { DEFAULT_CURRENCY } from '@/lib/money';
@@ -39,6 +36,10 @@ import {
  * the database, and `placeOrder` re-prices from them. A tampered form can change
  * where an order is delivered (which is the customer's own business) but never
  * what it costs.
+ *
+ * Only signed-in customers can place orders; guests are sent to sign-in and
+ * returned to checkout with their bag intact (the cart cookie is not tied to
+ * the session).
  */
 
 const checkoutSchema = z.object({
@@ -74,6 +75,8 @@ export async function submitCheckout(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser('/checkout');
+
   // Deliberately loose. This limit exists to blunt automated order spam and
   // card testing, not to police customers — and it buckets by IP, so an office,
   // a university or a mobile carrier's NAT shares one budget. Blocking a paying
@@ -110,15 +113,13 @@ export async function submitCheckout(
     );
   }
 
-  const user = await currentUser();
-
   const placed = await placeOrder({
     cart,
     email: parsed.data.email,
     phone: parsed.data.phone,
     shippingAddress: parsed.data.shipping,
     billingAddress: parsed.data.billing ?? null,
-    userId: user?.id ?? null,
+    userId: user.id,
     customerNote: parsed.data.note ?? null,
   });
 
@@ -138,23 +139,44 @@ export async function submitCheckout(
 
   /* --- payment ---------------------------------------------------------- */
 
-  const intent = await createPaymentIntent({
-    orderId: placed.orderId,
-    reference: placed.reference,
-    amount: placed.grandTotal,
-    currency: DEFAULT_CURRENCY,
-    customerEmail: parsed.data.email,
-    customerPhone: parsed.data.phone,
-    customerFirstName: parsed.data.shipping.recipientName.split(' ')[0] ?? '',
-    customerLastName:
-      parsed.data.shipping.recipientName.split(' ').slice(1).join(' ') || '-',
-    returnUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
-    cancelUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
-    notifyUrl:
-      paymentProvider === 'payhere'
-        ? `${publicEnv.appUrl}/api/payments/notify`
-        : `${publicEnv.appUrl}/api/payments/stripe/webhook`,
-  });
+  let intent: Awaited<ReturnType<typeof createPaymentIntent>>;
+  try {
+    intent = await createPaymentIntent({
+      orderId: placed.orderId,
+      reference: placed.reference,
+      amount: placed.grandTotal,
+      currency: DEFAULT_CURRENCY,
+      customerEmail: parsed.data.email,
+      customerPhone: parsed.data.phone,
+      customerFirstName: parsed.data.shipping.recipientName.split(' ')[0] ?? '',
+      customerLastName:
+        parsed.data.shipping.recipientName.split(' ').slice(1).join(' ') || '-',
+      returnUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
+      cancelUrl: `${publicEnv.appUrl}/order/${placed.reference}`,
+      notifyUrl:
+        paymentProvider === 'payhere'
+          ? `${publicEnv.appUrl}/api/payments/notify`
+          : `${publicEnv.appUrl}/api/payments/stripe/webhook`,
+    });
+  } catch (error) {
+    // The provider could not be reached, so nobody can pay this order. Cancel
+    // it (returning its stock) and reopen the bag, so the customer can simply
+    // press the button again instead of finding an "already ordered" bag.
+    console.error(
+      `[checkout] payment could not start for ${placed.reference}:`,
+      error,
+    );
+    await cancelExpiredPayment({
+      reference: placed.reference,
+      provider: 'pending',
+      providerReference: null,
+      eventId: 'payment-start-failed',
+    });
+    await reopenCart(cart.id);
+    return actionError(
+      'We could not reach the payment provider. Nothing has been charged — please try again in a moment.',
+    );
+  }
 
   await recordPaymentStarted({
     orderId: placed.orderId,
@@ -185,19 +207,6 @@ export async function submitCheckout(
   // re-rendered for it to show the now-empty cart.
   revalidatePath('/', 'layout');
 
-  // The guest token is the only way an account-less customer can reach their
-  // order again, so it is cookie'd for the confirmation page and emailed.
-  if (placed.guestToken) {
-    const store = await cookies();
-    store.set(`nl_order_${placed.reference}`, placed.guestToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: publicEnv.appUrl.startsWith('https://'),
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-    });
-  }
-
   // Recorded once the order exists, before either redirect — a purchase that
   // routes to a payment provider is still a completed checkout on our side.
   // The reference is deliberately absent: it is in the forbidden-key list
@@ -212,20 +221,6 @@ export async function submitCheckout(
     },
     { path: '/checkout' },
   );
-
-  const order = await getOrderByReference(placed.reference);
-  if (order) {
-    // The guest-access message carries no claim that payment succeeded.
-    if (placed.guestToken) {
-      await sendMail(
-        guestOrderAccessEmail({
-          email: order.email,
-          reference: order.reference,
-          token: placed.guestToken,
-        }),
-      );
-    }
-  }
 
   // A real provider needs the customer to go and pay; the mock driver is done.
   if (!paymentsAreMocked && intent.redirectUrl) {

@@ -14,3 +14,6 @@ mutableEnv.DATABASE_URL ??=
   'postgres://nordiclux:nordiclux_dev_password@localhost:5432/nordiclux';
 // Integration tests must not write analytics rows as a side effect.
 mutableEnv.ANALYTICS_ENABLED = 'false';
+// The suite asserts mock-driver behaviour; a developer's .env selecting a real
+// provider must not change what the tests exercise.
+mutableEnv.PAYMENT_DRIVER = 'mock';

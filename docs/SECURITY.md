@@ -66,7 +66,8 @@ possible.
 
 ## Transport and headers
 
-Set in `next.config.ts` for every response: `X-Content-Type-Options: nosniff`,
+Set in `next.config.ts` for every response: a baseline
+`Content-Security-Policy`, `X-Content-Type-Options: nosniff`,
 `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
 a restrictive `Permissions-Policy`, and HSTS with preload.
 
@@ -94,7 +95,7 @@ input, and only asserts facts the page also displays.
 
 ## Not yet done
 
-- No Content-Security-Policy header is set yet, despite the comment in
-  `next.config.ts` referring to one. Adding it requires auditing inline styles
-  and the JSON-LD script tags.
+- The Content-Security-Policy covers `frame-ancestors`, `base-uri`,
+  `object-src` and `form-action` only. `script-src`/`style-src` are not yet
+  restricted; that needs nonces for Next's inline scripts and the JSON-LD tags.
 - No automated dependency audit in CI.

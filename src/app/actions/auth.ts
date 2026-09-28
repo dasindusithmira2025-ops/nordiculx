@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -11,10 +12,17 @@ import {
   revokeAllSessions,
 } from '@/lib/auth';
 import { hashPassword, needsRehash, verifyPassword } from '@/lib/auth/password';
+import {
+  consumePasswordResetToken,
+  issuePasswordResetToken,
+} from '@/lib/auth/password-reset';
+import { sendMail } from '@/lib/mail';
+import { passwordResetEmail } from '@/lib/mail/templates';
 import { clearRateLimit, rateLimit } from '@/lib/rate-limit';
 import {
   actionError,
   actionOk,
+  emailSchema,
   loginSchema,
   passwordSchema,
   registerSchema,
@@ -269,4 +277,78 @@ export async function changePassword(
   });
 
   return actionOk();
+}
+
+/**
+ * Emails a reset link. Answers identically whether or not the address has an
+ * account, and sends after the response so the reply takes the same time
+ * either way — otherwise the form is an account-existence oracle.
+ */
+export async function requestPasswordReset(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const parsed = emailSchema.safeParse(formData.get('email'));
+  if (!parsed.success) {
+    return actionError('Please check the form.', {
+      email: parsed.error.issues[0]?.message ?? 'Enter a valid email address',
+    });
+  }
+
+  const limit = await rateLimit('password-reset', {
+    limit: 5,
+    windowSeconds: 900,
+    key: parsed.data,
+  });
+  if (!limit.allowed) {
+    return actionError('Too many attempts. Please try again shortly.');
+  }
+
+  const email = parsed.data;
+  after(async () => {
+    const token = await issuePasswordResetToken(email);
+    if (token) await sendMail(passwordResetEmail({ email, token }));
+  });
+
+  return actionOk();
+}
+
+/** Sets a new password from a reset link, signs every device out, then in. */
+export async function resetPassword(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const limit = await rateLimit('password-reset-confirm', {
+    limit: 10,
+    windowSeconds: 900,
+  });
+  if (!limit.allowed) {
+    return actionError('Too many attempts. Please try again shortly.');
+  }
+
+  const token = formData.get('token');
+  const parsed = passwordSchema.safeParse(formData.get('password'));
+  if (!parsed.success) {
+    return actionError('Please check the form.', {
+      password: parsed.error.issues[0]?.message ?? 'Invalid password',
+    });
+  }
+  if (typeof token !== 'string' || token.length === 0) {
+    return actionError('This reset link is not valid. Request a new one.');
+  }
+
+  const userId = await consumePasswordResetToken(
+    token,
+    await hashPassword(parsed.data),
+  );
+  if (!userId) {
+    return actionError(
+      'This reset link has expired or was already used. Request a new one.',
+    );
+  }
+
+  // Whoever knew the old password is signed out everywhere.
+  await revokeAllSessions(userId);
+  await createSession(userId);
+  redirect('/account');
 }

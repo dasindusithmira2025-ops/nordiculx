@@ -1,6 +1,6 @@
 # Dry run — full catalogue import
 
-Generated 2026-09-18T18:40:32.345Z
+Generated 2026-09-28T18:52:09.179Z
 
 ```
 PDF products expected:            88

@@ -47,9 +47,9 @@ export const config = {
    * would be redirected from the login page to the login page forever.
    */
   matcher: [
-    '/account((?!/login|/register).*)',
+    '/account((?!/login|/register|/forgot-password|/reset-password).*)',
     '/admin((?!/login).*)',
-    // `/checkout` is deliberately absent: guests must be able to buy without an
-    // account, so requiring a session cookie there would block every guest.
+    // `/checkout` is absent so an empty bag still redirects to /shop; the page
+    // and `submitCheckout` call `requireUser('/checkout')` themselves.
   ],
 };

@@ -62,6 +62,10 @@ export async function createStripeCheckoutSession(
       },
       success_url: `${request.returnUrl}?stripe_session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.cancelUrl}?payment=cancelled`,
+      // Stock is reserved while the session is open. Stripe's 24-hour default
+      // would hide an abandoned bag's items from everyone else for a day; an
+      // hour is ample to pay, and expiry releases them via the webhook.
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
     },
     { idempotencyKey: `nordiclux-checkout-${request.orderId}` },
   );

@@ -60,7 +60,10 @@ Paid order confirmations with a PDF invoice are queued transactionally and
 attempted immediately after payment confirmation. Configure a scheduler to send
 `POST https://<domain>/api/cron/paid-order-notifications` at least once per
 minute with `Authorization: Bearer <CRON_SECRET>` so temporary provider or
-process failures are retried. Generate `CRON_SECRET` as a random value of at
+process failures are retried. **This scheduler is required, not optional:** the
+same call cancels PayHere orders left unpaid for 2 hours and returns their
+reserved stock to sale. Without it, every abandoned PayHere payment hides its
+items from other customers permanently. Generate `CRON_SECRET` as a random value of at
 least 32 characters and store it only in the hosting secret store.
 
 Run `npm run db:migrate` during deployment before serving the new build to apply

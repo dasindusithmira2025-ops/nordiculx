@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { addToBag, buyableProduct } from './fixtures';
+import { addToBag, buyableProduct, registerCustomer } from './fixtures';
 
 /**
  * Checkout, end to end.
@@ -15,10 +15,11 @@ const CUSTOMER = {
 };
 
 async function addSomethingToBag(page: Page) {
+  await registerCustomer(page);
   await addToBag(page);
 }
 
-async function fillGuestCheckout(page: Page, email: string) {
+async function fillCheckout(page: Page, email: string) {
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Phone', { exact: true }).fill('0771234567');
   await page.getByLabel('Recipient name').fill('Amaya Perera');
@@ -34,14 +35,18 @@ test.describe('checkout', () => {
     await expect(page).toHaveURL(/\/shop$/);
   });
 
-  test('a guest can buy and lands on a confirmation', async ({ page }) => {
+  test('a guest is sent to sign-in first', async ({ page }) => {
+    await addToBag(page);
+    await page.goto('/checkout');
+    await expect(page).toHaveURL(/\/account\/login\?next=%2Fcheckout$/);
+  });
+
+  test('a customer can buy and lands on a confirmation', async ({ page }) => {
     await addSomethingToBag(page);
     await page.goto('/checkout');
-
-    // Guests are not bounced to sign-in.
     await expect(page).toHaveURL(/\/checkout$/);
 
-    await fillGuestCheckout(page, 'guest.buyer@example.com');
+    await fillCheckout(page, 'guest.buyer@example.com');
     await page.getByRole('button', { name: /place order/i }).click();
 
     await expect(page).toHaveURL(/\/order\/NL-/);
@@ -58,7 +63,7 @@ test.describe('checkout', () => {
   test('the bag is emptied once the order is placed', async ({ page }) => {
     await addSomethingToBag(page);
     await page.goto('/checkout');
-    await fillGuestCheckout(page, 'guest.empty@example.com');
+    await fillCheckout(page, 'guest.empty@example.com');
     await page.getByRole('button', { name: /place order/i }).click();
     await expect(page).toHaveURL(/\/order\/NL-/);
 
@@ -74,7 +79,7 @@ test.describe('checkout', () => {
     await expect(page.getByLabel(/Bag, 1 item/i)).toBeVisible();
 
     await page.goto('/checkout');
-    await fillGuestCheckout(page, 'guest.badge@example.com');
+    await fillCheckout(page, 'guest.badge@example.com');
     await page.getByRole('button', { name: /place order/i }).click();
     await expect(page).toHaveURL(/\/order\/NL-/);
 
@@ -112,7 +117,7 @@ test.describe('checkout', () => {
     await page.getByRole('button', { name: /^sign in$/i }).click();
     await expect(page).toHaveURL(/\/account$/);
 
-    await addSomethingToBag(page);
+    await addToBag(page);
     await page.goto('/checkout');
 
     // The saved default address is preselected, so only the contact phone is
@@ -130,20 +135,20 @@ test.describe('checkout', () => {
     ).toBeVisible();
   });
 
-  test('a confirmation is not readable without the order cookie', async ({
+  test('a confirmation is not readable without the session', async ({
     page,
     browser,
   }) => {
     await addSomethingToBag(page);
     await page.goto('/checkout');
-    await fillGuestCheckout(page, 'guest.private@example.com');
+    await fillCheckout(page, 'guest.private@example.com');
     await page.getByRole('button', { name: /place order/i }).click();
     await expect(page).toHaveURL(/\/order\/NL-/);
 
     const url = page.url();
 
-    // A different browser context has neither the session nor the guest cookie,
-    // so the reference alone must not open the order.
+    // A different browser context has no session, so the reference alone must
+    // not open the order.
     const stranger = await browser.newContext();
     const strangerPage = await stranger.newPage();
     const response = await strangerPage.goto(url);

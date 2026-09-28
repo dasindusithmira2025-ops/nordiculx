@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { currentUser } from '@/lib/auth';
-import { getOrderForGuest, getOrderForUser } from '@/lib/orders';
+import { getOrderForVisitor } from '@/lib/orders';
+import { paymentProvider } from '@/lib/payments';
 import { ButtonLink } from '@/components/ui/button';
 import { OrderDetailView } from '@/components/commerce/order-detail';
 import { CheckIcon } from '@/components/ui/icons';
@@ -31,19 +31,16 @@ export default async function OrderConfirmationPage({
 }) {
   const { reference } = await params;
   const returnedFromCancellation = (await searchParams).payment === 'cancelled';
-  const normalised = reference.toUpperCase();
-
   const user = await currentUser();
-
-  let order = user ? await getOrderForUser(user.id, normalised) : null;
-
-  if (!order) {
-    const store = await cookies();
-    const token = store.get(`nl_order_${normalised}`)?.value;
-    if (token) order = await getOrderForGuest(normalised, token);
-  }
-
+  const order = await getOrderForVisitor(reference);
   if (!order) notFound();
+
+  // Form-based providers can be re-entered for the same order until it is
+  // paid or its reservation lapses. Stripe sessions cannot, so it is omitted.
+  const canRetryPayment =
+    paymentProvider === 'payhere' &&
+    order.status === 'pending_payment' &&
+    order.paymentStatus !== 'paid';
 
   return (
     <div className="page-x mx-auto max-w-3xl pt-12 pb-28">
@@ -75,11 +72,11 @@ export default async function OrderConfirmationPage({
           ) : order.status === 'cancelled' ? (
             'The payment session expired, so this order was cancelled and its reserved items were released.'
           ) : returnedFromCancellation ? (
-            'No payment was confirmed from this browser return. Your reserved order remains pending until Stripe reports completion or the payment window expires.'
+            'No payment was taken. The items stay reserved for a short while, then the unpaid order is released automatically.'
           ) : order.paymentStatus === 'failed' ? (
-            'Stripe did not complete this payment. The order has not been confirmed.'
+            'The payment did not go through and the order has not been confirmed. No money was taken for it.'
           ) : (
-            'We are waiting for verified payment confirmation from Stripe. This page does not mark the order paid.'
+            'We are waiting for the payment provider to confirm your payment. This usually takes a few seconds — refresh this page shortly.'
           )}
         </p>
       </div>
@@ -89,6 +86,11 @@ export default async function OrderConfirmationPage({
       </div>
 
       <div className="mt-16 flex flex-wrap justify-center gap-4">
+        {canRetryPayment ? (
+          <ButtonLink href={`/checkout/pay?reference=${order.reference}`}>
+            Complete payment
+          </ButtonLink>
+        ) : null}
         <ButtonLink href="/shop" variant="secondary">
           Continue shopping
         </ButtonLink>

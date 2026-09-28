@@ -1,10 +1,21 @@
 import type { NextConfig } from 'next';
 
 /**
- * Security headers applied to every response.
- * CSP is intentionally strict; see docs/SECURITY.md.
+ * Security headers applied to every response. See docs/SECURITY.md.
+ *
+ * The CSP restricts only what cannot break rendering: framing, <base>
+ * hijacking, plugins, and where forms may post — this site plus the two payment
+ * providers' hosted pages. Script and style sources are not yet restricted.
  */
+const contentSecurityPolicy = [
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self' https://*.payhere.lk https://checkout.stripe.com",
+].join('; ');
+
 const securityHeaders = [
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

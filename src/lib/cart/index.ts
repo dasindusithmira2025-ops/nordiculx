@@ -324,6 +324,18 @@ export async function markCartConverted(cartId: string, orderId: string) {
     .where(eq(carts.id, cartId));
 }
 
+/**
+ * Undoes a conversion whose order was cancelled before anyone could pay it
+ * (the payment provider was unreachable), so the same bag can be submitted
+ * again.
+ */
+export async function reopenCart(cartId: string) {
+  await db
+    .update(carts)
+    .set({ convertedOrderId: null, updatedAt: new Date() })
+    .where(eq(carts.id, cartId));
+}
+
 /** Clears the cart cookie — called after checkout completes. */
 export async function clearCartCookie() {
   const store = await cookies();

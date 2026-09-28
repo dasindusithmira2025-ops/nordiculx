@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { placeGuestOrder } from './fixtures';
+import { placeOrder } from './fixtures';
 
 /**
  * The staff area.
@@ -117,7 +117,7 @@ test.describe('permissions', () => {
   test('a role without orders.manage cannot change a status', async ({
     page,
   }) => {
-    const reference = await placeGuestOrder(page, 'e2e.readonly@example.com');
+    const reference = await placeOrder(page, 'e2e.readonly@example.com');
 
     await staffSignIn(page, SUPPORT);
     await page.goto(`/admin/orders/${reference}`);
@@ -136,7 +136,7 @@ test.describe('order fulfilment', () => {
   test('an owner can move an order through a status', async ({ page }) => {
     // The order this test dispatches is the one it just placed, so it never
     // depends on the seed leaving a `confirmed` order lying around.
-    const reference = await placeGuestOrder(page, 'e2e.dispatch@example.com');
+    const reference = await placeOrder(page, 'e2e.dispatch@example.com');
 
     await staffSignIn(page, OWNER);
     await page.goto('/admin/orders?status=confirmed');

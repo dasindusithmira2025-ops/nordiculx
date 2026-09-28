@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { orders, trackingEvents } from '@/lib/db/schema';
 import type { OrderStatus, PaymentStatus } from '@/lib/db/schema';
 import { hashToken, tokensMatch } from '@/lib/tokens';
+import { cookies } from 'next/headers';
+import { currentUser } from '@/lib/auth';
 
 /**
  * Order reads, shared by the account area, the confirmation page, guest
@@ -191,4 +193,21 @@ export async function getOrderForGuest(
   if (!order?.guestAccessTokenHash) return null;
   if (!tokensMatch(order.guestAccessTokenHash, hashToken(token))) return null;
   return loadOrderDetail(order);
+}
+
+/**
+ * The order as the current visitor may see it: the signed-in owner, or a guest
+ * holding the token checkout set as a cookie. The reference alone is never
+ * enough — references appear in emails and support chats.
+ */
+export async function getOrderForVisitor(
+  reference: string,
+): Promise<OrderDetail | null> {
+  const normalised = reference.toUpperCase();
+  const user = await currentUser();
+  const owned = user ? await getOrderForUser(user.id, normalised) : null;
+  if (owned) return owned;
+
+  const token = (await cookies()).get(`nl_order_${normalised}`)?.value;
+  return token ? getOrderForGuest(normalised, token) : null;
 }

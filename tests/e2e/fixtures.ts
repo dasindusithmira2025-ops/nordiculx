@@ -97,14 +97,32 @@ export async function addToBag(page: Page, slug?: string) {
 }
 
 /**
- * Places a real guest order and returns its reference.
+ * Registers and signs in a fresh customer. Checkout requires an account, and a
+ * new one per test keeps parallel workers from sharing a bag or saved address.
+ */
+export async function registerCustomer(page: Page) {
+  await page.goto('/account/register');
+  await page.getByLabel('First name').fill('Amaya');
+  await page.getByLabel('Last name').fill('Perera');
+  await page
+    .getByLabel('Email address')
+    .fill(`e2e.${Math.random().toString(36).slice(2, 10)}@example.com`);
+  await page.getByLabel('Password').fill('a-long-enough-passphrase');
+  await page.getByRole('button', { name: /create account/i }).click();
+  await expect(page).not.toHaveURL(/\/account\/register/);
+}
+
+/**
+ * Places a real order as a freshly registered customer and returns its
+ * reference.
  *
  * Admin specs used to reach for whatever orders the seed happened to leave
  * behind, which coupled them to demo data that has since been purged. Creating
  * the order they act on makes them self-contained and keeps the operating
  * dataset free of fixtures.
  */
-export async function placeGuestOrder(page: Page, email: string) {
+export async function placeOrder(page: Page, email: string) {
+  await registerCustomer(page);
   await addToBag(page);
   await page.goto('/checkout');
   await page.getByLabel('Email address').fill(email);

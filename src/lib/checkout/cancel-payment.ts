@@ -1,14 +1,73 @@
 import 'server-only';
-import { and, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import { db, type Transaction } from '@/lib/db';
 import {
   inventoryItems,
   inventoryMovements,
   orderItems,
   orders,
   payments,
+  promotions,
   trackingEvents,
 } from '@/lib/db/schema';
+
+/**
+ * Returns an order's reserved units to sale and writes the ledger rows, inside
+ * the caller's transaction. Only call it for an order that still holds its
+ * reservation (awaiting payment through packed) — dispatch has already taken
+ * the units off the shelf.
+ */
+export async function releaseOrderReservation(
+  tx: Transaction,
+  orderId: string,
+  note: string,
+) {
+  const lines = await tx
+    .select({
+      variantId: orderItems.variantId,
+      quantity: sql<number>`SUM(${orderItems.quantity})::int`,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .groupBy(orderItems.variantId);
+
+  for (const line of lines) {
+    if (!line.variantId) continue;
+    const released = await tx
+      .update(inventoryItems)
+      .set({
+        reserved: sql`${inventoryItems.reserved} - ${line.quantity}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(inventoryItems.variantId, line.variantId),
+          sql`${inventoryItems.reserved} >= ${line.quantity}`,
+        ),
+      )
+      .returning({
+        onHand: inventoryItems.onHand,
+        reserved: inventoryItems.reserved,
+      });
+    const after = released[0];
+    if (!after) {
+      throw new Error(
+        `Reservation invariant failed while releasing ${orderId}`,
+      );
+    }
+    await tx.insert(inventoryMovements).values({
+      variantId: line.variantId,
+      reason: 'order_released',
+      onHandDelta: 0,
+      reservedDelta: -line.quantity,
+      onHandAfter: after.onHand,
+      reservedAfter: after.reserved,
+      referenceType: 'order',
+      referenceId: orderId,
+      note,
+    });
+  }
+}
 
 /**
  * Cancels an expired provider checkout and releases its reservation once.
@@ -27,6 +86,7 @@ export async function cancelExpiredPayment(input: {
         id: orders.id,
         status: orders.status,
         paymentStatus: orders.paymentStatus,
+        promotionId: orders.promotionId,
       })
       .from(orders)
       .where(eq(orders.reference, input.reference))
@@ -56,50 +116,19 @@ export async function cancelExpiredPayment(input: {
       return { ok: true as const, orderId: order.id, changed: false };
     }
 
-    const lines = await tx
-      .select({
-        variantId: orderItems.variantId,
-        quantity: sql<number>`SUM(${orderItems.quantity})::int`,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, order.id))
-      .groupBy(orderItems.variantId);
+    await releaseOrderReservation(
+      tx,
+      order.id,
+      `Released after payment session expired for ${input.reference}`,
+    );
 
-    for (const line of lines) {
-      if (!line.variantId) continue;
-      const released = await tx
-        .update(inventoryItems)
-        .set({
-          reserved: sql`${inventoryItems.reserved} - ${line.quantity}`,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(inventoryItems.variantId, line.variantId),
-            sql`${inventoryItems.reserved} >= ${line.quantity}`,
-          ),
-        )
-        .returning({
-          onHand: inventoryItems.onHand,
-          reserved: inventoryItems.reserved,
-        });
-      const after = released[0];
-      if (!after) {
-        throw new Error(
-          `Reservation invariant failed while cancelling ${input.reference}`,
-        );
-      }
-      await tx.insert(inventoryMovements).values({
-        variantId: line.variantId,
-        reason: 'order_released',
-        onHandDelta: 0,
-        reservedDelta: -line.quantity,
-        onHandAfter: after.onHand,
-        reservedAfter: after.reserved,
-        referenceType: 'order',
-        referenceId: order.id,
-        note: `Released after payment session expired for ${input.reference}`,
-      });
+    // An order nobody paid for did not use the code; give the redemption back
+    // so a limited code still works when the customer tries again.
+    if (order.promotionId) {
+      await tx
+        .update(promotions)
+        .set({ usageCount: sql`GREATEST(${promotions.usageCount} - 1, 0)` })
+        .where(eq(promotions.id, order.promotionId));
     }
 
     const paymentRows = await tx
@@ -130,4 +159,41 @@ export async function cancelExpiredPayment(input: {
     });
     return { ok: true as const, orderId: order.id, changed: true };
   });
+}
+
+/**
+ * How long an unpaid order may hold stock when no provider event will ever
+ * close it: PayHere sends nothing for an abandoned payment page, and an order
+ * whose provider call failed never reached a provider at all. Stripe closes its
+ * own sessions through `checkout.session.expired`, so it is left to that.
+ */
+export const UNPAID_ORDER_TTL_MINUTES = 120;
+
+/** Cancels stale unpaid orders and releases their stock. Run from the cron. */
+export async function expireStaleUnpaidOrders(limit = 50) {
+  const cutoff = new Date(Date.now() - UNPAID_ORDER_TTL_MINUTES * 60 * 1000);
+  const stale = await db
+    .select({ reference: orders.reference, provider: payments.provider })
+    .from(orders)
+    .innerJoin(payments, eq(payments.orderId, orders.id))
+    .where(
+      and(
+        eq(orders.status, 'pending_payment'),
+        inArray(payments.provider, ['payhere', 'pending']),
+        lt(orders.createdAt, cutoff),
+      ),
+    )
+    .limit(limit);
+
+  let cancelled = 0;
+  for (const order of stale) {
+    const result = await cancelExpiredPayment({
+      reference: order.reference,
+      provider: order.provider,
+      providerReference: null,
+      eventId: 'unpaid-order-expiry',
+    });
+    if (result.ok && result.changed) cancelled += 1;
+  }
+  return { cancelled };
 }

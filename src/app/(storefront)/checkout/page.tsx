@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCart } from '@/lib/cart';
-import { currentUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { getAddressesForUser } from '@/lib/account';
 import { paymentsAreMocked } from '@/lib/payments';
 import { trackEvent } from '@/lib/analytics';
@@ -17,10 +17,9 @@ export const metadata: Metadata = {
 /**
  * Checkout.
  *
- * Guests are welcome: `src/proxy.ts` redirects `/checkout` to sign-in only when
- * a session cookie is absent... which would block guests entirely, so checkout
- * is NOT matched there. Anyone with a bag can buy; an account is an option, not
- * a requirement.
+ * Signed-in customers only. Guests are sent to sign-in and returned here; the
+ * bag lives in its own cookie, so it survives the round trip. `submitCheckout`
+ * enforces the same rule — this redirect is only the friendly half.
  *
  * An empty bag redirects rather than rendering a form that cannot be submitted.
  */
@@ -28,8 +27,8 @@ export default async function CheckoutPage() {
   const cart = await getCart();
   if (cart.lines.length === 0) redirect('/shop');
 
-  const user = await currentUser();
-  const savedAddresses = user ? await getAddressesForUser(user.id) : [];
+  const user = await requireUser('/checkout');
+  const savedAddresses = await getAddressesForUser(user.id);
 
   // Counts and totals only. No line contents, no address, no email.
   await trackEvent(
@@ -61,7 +60,7 @@ export default async function CheckoutPage() {
           <div className="min-w-0">
             <CheckoutForm
               savedAddresses={savedAddresses}
-              defaultEmail={user?.email}
+              defaultEmail={user.email}
             />
           </div>
           <CheckoutSummary cart={cart} />
