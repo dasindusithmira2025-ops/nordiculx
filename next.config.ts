@@ -52,6 +52,23 @@ const retiredPantryRoutes = [
   { from: '/product/saga-forest-honey', to: '/category/wellness' },
 ];
 
+/**
+ * The nine original skin concerns were replaced by six. The old concern rows
+ * are archived (see scripts/concerns-update.ts), so their URLs would 404;
+ * each is sent permanently to the concern that now covers it.
+ */
+const retiredConcernSlugs = [
+  { from: 'dryness', to: 'dryness-dehydration' },
+  { from: 'dehydration', to: 'dryness-dehydration' },
+  { from: 'barrier-support', to: 'sensitivity-redness' },
+  { from: 'sensitivity', to: 'sensitivity-redness' },
+  { from: 'redness', to: 'sensitivity-redness' },
+  { from: 'blemishes', to: 'acne-blemishes' },
+  { from: 'dullness', to: 'dullness-uneven-tone' },
+  { from: 'uneven-tone', to: 'dullness-uneven-tone' },
+  { from: 'firmness', to: 'fine-lines-aging' },
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -71,11 +88,18 @@ const nextConfig: NextConfig = {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
   async redirects() {
-    return retiredPantryRoutes.map(({ from, to }) => ({
-      source: from,
-      destination: to,
-      permanent: false,
-    }));
+    return [
+      ...retiredPantryRoutes.map(({ from, to }) => ({
+        source: from,
+        destination: to,
+        permanent: false,
+      })),
+      ...retiredConcernSlugs.map(({ from, to }) => ({
+        source: `/concern/${from}`,
+        destination: `/concern/${to}`,
+        permanent: true,
+      })),
+    ];
   },
 };
 

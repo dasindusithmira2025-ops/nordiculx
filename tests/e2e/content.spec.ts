@@ -48,7 +48,7 @@ test.describe('taxonomy landings', () => {
   });
 
   test('a concern page shows guidance and its products', async ({ page }) => {
-    await page.goto('/concern/dryness');
+    await page.goto('/concern/dryness-dehydration');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('article').first()).toBeVisible();
   });

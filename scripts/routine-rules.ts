@@ -27,12 +27,12 @@ const GENERATED = '[auto]';
 
 /** Concern slugs the questionnaire actually offers, keyed by its answer value. */
 const CONCERN_FOR_ANSWER: Record<string, string> = {
-  dehydration: 'dehydration',
-  dryness: 'dryness',
-  blemishes: 'blemishes',
-  dullness: 'dullness',
-  uneven_tone: 'uneven-tone',
-  barrier: 'barrier-support',
+  dehydration: 'dryness-dehydration',
+  dryness: 'dryness-dehydration',
+  blemishes: 'acne-blemishes',
+  dullness: 'dullness-uneven-tone',
+  uneven_tone: 'dark-spots-pigmentation',
+  barrier: 'sensitivity-redness',
 };
 
 /**
@@ -150,7 +150,7 @@ async function main() {
 
     // Sensitivity is a catalogue concern but not a quiz concern: it maps onto
     // the separate "does your skin react easily" question instead.
-    if (concerns.has('sensitivity')) {
+    if (concerns.has('sensitivity-redness')) {
       rules.push({
         name: `${GENERATED} ${product.name} — sensitivity`,
         step,

@@ -195,11 +195,11 @@ describe('taxonomy mapping', () => {
 
   it('lets one ambiguous tag carry two concerns, and maps nothing else', () => {
     expect(concernSlugsFor(['Brightening'])).toEqual([
-      'dullness',
-      'uneven-tone',
+      'dark-spots-pigmentation',
+      'dullness-uneven-tone',
     ]);
     expect(concernSlugsFor(['Acne-Prone', 'Blemish Control'])).toEqual([
-      'blemishes',
+      'acne-blemishes',
     ]);
     // No invented taxonomy for tags with no honest equivalent.
     expect(concernSlugsFor(['Keratosis Pilaris', 'SPF 45'])).toEqual([]);

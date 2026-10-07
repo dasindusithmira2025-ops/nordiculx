@@ -169,19 +169,19 @@ const SKIN_TYPE_BY_TAG: Record<string, SkinType> = {
  * and listed in the reports rather than forced into the nearest concern.
  */
 const CONCERNS_BY_TAG: Record<string, string[]> = {
-  'Dry Skin': ['dryness'],
-  Hydration: ['dehydration'],
-  'Dehydrated Skin': ['dehydration'],
-  'Sensitive Skin': ['sensitivity'],
-  Eczema: ['sensitivity'],
-  Soothing: ['sensitivity'],
-  Redness: ['redness'],
-  'Acne-Prone': ['blemishes'],
-  'Blemish Control': ['blemishes'],
-  Brightening: ['dullness', 'uneven-tone'],
-  'Anti-Aging': ['firmness'],
-  'Fine Lines': ['firmness'],
-  'Barrier Repair': ['barrier-support'],
+  'Dry Skin': ['dryness-dehydration'],
+  Hydration: ['dryness-dehydration'],
+  'Dehydrated Skin': ['dryness-dehydration'],
+  'Sensitive Skin': ['sensitivity-redness'],
+  Eczema: ['sensitivity-redness'],
+  Soothing: ['sensitivity-redness'],
+  Redness: ['sensitivity-redness'],
+  'Acne-Prone': ['acne-blemishes'],
+  'Blemish Control': ['acne-blemishes'],
+  Brightening: ['dullness-uneven-tone', 'dark-spots-pigmentation'],
+  'Anti-Aging': ['fine-lines-aging'],
+  'Fine Lines': ['fine-lines-aging'],
+  'Barrier Repair': ['dryness-dehydration', 'sensitivity-redness'],
 };
 
 export function skinTypesFor(tags: string[]): SkinType[] {

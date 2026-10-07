@@ -169,67 +169,44 @@ export const categories = [
 
 export const concerns = [
   {
-    slug: 'dryness',
-    name: 'Dryness',
-    description: 'Skin that feels tight, rough or thirsty by the afternoon.',
+    slug: 'dullness-uneven-tone',
+    name: 'Dullness & Uneven Tone',
+    description: 'For tired, lacklustre-looking skin.',
     guidance:
-      'Look for richer textures and layered hydration — a cream cleanser, a humectant serum under an occlusive moisturiser. Products listed here are grouped by their texture and by the way they are typically used, not by any claim about results.',
+      'Gentle exfoliation, consistent hydration and daily sun protection are the usual approach. Frequency matters more than strength.',
   },
   {
-    slug: 'dehydration',
-    name: 'Dehydration',
-    description: 'Skin lacking water rather than oil — dull, flat, thirsty.',
-    guidance:
-      'Dehydration and dryness are different things: oily skin can be dehydrated. Lightweight, water-based layers are the usual approach.',
-  },
-  {
-    slug: 'sensitivity',
-    name: 'Sensitivity',
-    description: 'Skin that reacts easily to fragrance, actives or weather.',
-    guidance:
-      'Shorter ingredient lists and fragrance-free formulas tend to be easier to tolerate. Patch test anything new, and introduce one product at a time.',
-  },
-  {
-    slug: 'redness',
-    name: 'Redness',
-    description:
-      'Visible flushing or persistent colour, often across the cheeks.',
-    guidance:
-      'Calming, fragrance-free routines and consistent daily sun protection are the usual starting point. Persistent redness is worth discussing with a dermatologist.',
-  },
-  {
-    slug: 'blemishes',
-    name: 'Blemishes',
-    description: 'Congestion and breakouts, whether occasional or ongoing.',
-    guidance:
-      'Gentle cleansing and a simple routine are easier to keep up than an aggressive one. Nordic Lux does not sell acne medication — persistent or painful breakouts are a conversation for a clinician.',
-  },
-  {
-    slug: 'uneven-tone',
-    name: 'Uneven Tone',
-    description: 'Patchiness or marks left behind after blemishes.',
+    slug: 'dark-spots-pigmentation',
+    name: 'Dark Spots & Pigmentation',
+    description: 'For visible spots and post-acne marks.',
     guidance:
       'Daily sun protection is the single most useful habit here. Beyond that, products are grouped by ingredient family so you can choose what suits you.',
   },
   {
-    slug: 'dullness',
-    name: 'Dullness',
-    description: 'Skin that looks flat or tired rather than luminous.',
+    slug: 'dryness-dehydration',
+    name: 'Dryness & Dehydration',
+    description: 'For tight, rough or moisture-lacking skin.',
     guidance:
-      'Gentle exfoliation and consistent hydration are the usual approach. Frequency matters more than strength.',
+      'Dryness and dehydration are different things — oily skin can be dehydrated. A humectant serum under a moisturiser is the usual approach, with richer textures where skin feels tight. Products are grouped by texture and typical use, not by any claim about results.',
   },
   {
-    slug: 'barrier-support',
-    name: 'Barrier Support',
-    description:
-      'Skin that has been over-exfoliated or is reacting to weather.',
+    slug: 'sensitivity-redness',
+    name: 'Sensitivity & Redness',
+    description: 'For reactive, irritated-looking skin.',
     guidance:
-      'Pare the routine back to a gentle cleanser and a comforting moisturiser until things settle. Less is genuinely more here.',
+      'Shorter ingredient lists, fragrance-free formulas and daily sun protection are the usual starting point. Patch test anything new and introduce one product at a time. Persistent redness is worth discussing with a dermatologist.',
   },
   {
-    slug: 'firmness',
-    name: 'Firmness',
-    description: 'Loss of bounce and definition over time.',
+    slug: 'acne-blemishes',
+    name: 'Acne & Blemishes',
+    description: 'For breakouts, congestion and blemish-prone skin.',
+    guidance:
+      'Gentle cleansing and a simple routine are easier to keep up than an aggressive one. Nordic Lux does not sell acne medication — persistent or painful breakouts are a conversation for a clinician.',
+  },
+  {
+    slug: 'fine-lines-aging',
+    name: 'Fine Lines & Aging',
+    description: 'For wrinkles, firmness and elasticity concerns.',
     guidance:
       'Products in this group are chosen for their textures and ingredient families. Nordic Lux makes no claims about reversing the appearance of ageing.',
   },
@@ -378,8 +355,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['all'],
     routineStep: 'cleanse',
     concerns: [
-      { slug: 'dryness', relevance: 8 },
-      { slug: 'sensitivity', relevance: 7 },
+      { slug: 'dryness-dehydration', relevance: 8 },
+      { slug: 'sensitivity-redness', relevance: 7 },
     ],
     keyIngredients: ['squalane', 'cloudberry'],
     featured: true,
@@ -424,8 +401,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['normal', 'oily', 'combination', 'sensitive'],
     routineStep: 'cleanse',
     concerns: [
-      { slug: 'sensitivity', relevance: 9 },
-      { slug: 'blemishes', relevance: 6 },
+      { slug: 'sensitivity-redness', relevance: 9 },
+      { slug: 'acne-blemishes', relevance: 6 },
     ],
     keyIngredients: ['oat-extract'],
     variants: [
@@ -461,10 +438,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['dry', 'sensitive', 'normal'],
     routineStep: 'moisturise',
     concerns: [
-      { slug: 'barrier-support', relevance: 10 },
-      { slug: 'dryness', relevance: 9 },
-      { slug: 'sensitivity', relevance: 8 },
-      { slug: 'redness', relevance: 7 },
+      { slug: 'dryness-dehydration', relevance: 10 },
+      { slug: 'sensitivity-redness', relevance: 10 },
     ],
     keyIngredients: ['ceramides', 'squalane', 'oat-extract'],
     featured: true,
@@ -509,9 +484,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['all'],
     routineStep: 'treat',
     concerns: [
-      { slug: 'dehydration', relevance: 10 },
-      { slug: 'dullness', relevance: 7 },
-      { slug: 'dryness', relevance: 6 },
+      { slug: 'dryness-dehydration', relevance: 10 },
+      { slug: 'dullness-uneven-tone', relevance: 7 },
     ],
     keyIngredients: ['birch-sap', 'hyaluronic-acid', 'niacinamide'],
     featured: true,
@@ -558,9 +532,9 @@ export const products: SeedProduct[] = [
     skinTypes: ['dry', 'normal', 'combination'],
     routineStep: 'treat',
     concerns: [
-      { slug: 'dryness', relevance: 9 },
-      { slug: 'dullness', relevance: 8 },
-      { slug: 'firmness', relevance: 6 },
+      { slug: 'dryness-dehydration', relevance: 9 },
+      { slug: 'dullness-uneven-tone', relevance: 8 },
+      { slug: 'fine-lines-aging', relevance: 6 },
     ],
     keyIngredients: ['cloudberry', 'sea-buckthorn', 'squalane'],
     featured: true,
@@ -597,9 +571,9 @@ export const products: SeedProduct[] = [
     skinTypes: ['normal', 'oily', 'combination'],
     routineStep: 'treat',
     concerns: [
-      { slug: 'dullness', relevance: 9 },
-      { slug: 'uneven-tone', relevance: 8 },
-      { slug: 'blemishes', relevance: 6 },
+      { slug: 'dullness-uneven-tone', relevance: 9 },
+      { slug: 'dark-spots-pigmentation', relevance: 8 },
+      { slug: 'acne-blemishes', relevance: 6 },
     ],
     keyIngredients: ['lactic-acid'],
     variants: [
@@ -635,8 +609,9 @@ export const products: SeedProduct[] = [
     skinTypes: ['all'],
     routineStep: 'protect',
     concerns: [
-      { slug: 'uneven-tone', relevance: 9 },
-      { slug: 'firmness', relevance: 6 },
+      { slug: 'dullness-uneven-tone', relevance: 9 },
+      { slug: 'dark-spots-pigmentation', relevance: 9 },
+      { slug: 'fine-lines-aging', relevance: 6 },
     ],
     keyIngredients: ['niacinamide'],
     featured: true,
@@ -681,7 +656,7 @@ export const products: SeedProduct[] = [
       'Zinc Oxide, Caprylic/Capric Triglyceride, Cera Alba, Squalane, Iron Oxides, Tocopherol.',
     skinTypes: ['all'],
     routineStep: 'protect',
-    concerns: [{ slug: 'sensitivity', relevance: 7 }],
+    concerns: [{ slug: 'sensitivity-redness', relevance: 7 }],
     keyIngredients: ['zinc-oxide'],
     isNew: true,
     variants: [
@@ -756,7 +731,7 @@ export const products: SeedProduct[] = [
       'Helianthus Annuus Seed Oil, Simmondsia Chinensis Seed Oil, Prunus Amygdalus Dulcis Oil, Tilia Cordata Flower Extract, Parfum, Tocopherol.',
     skinTypes: ['dry', 'normal'],
     routineStep: 'body',
-    concerns: [{ slug: 'dryness', relevance: 8 }],
+    concerns: [{ slug: 'dryness-dehydration', relevance: 8 }],
     keyIngredients: ['squalane'],
     variants: [
       {
@@ -790,8 +765,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['dry', 'normal'],
     routineStep: 'body',
     concerns: [
-      { slug: 'dryness', relevance: 9 },
-      { slug: 'barrier-support', relevance: 7 },
+      { slug: 'dryness-dehydration', relevance: 9 },
+      { slug: 'sensitivity-redness', relevance: 7 },
     ],
     keyIngredients: ['ceramides', 'squalane'],
     variants: [
@@ -893,7 +868,7 @@ export const products: SeedProduct[] = [
       'Helianthus Annuus Seed Oil, Ricinus Communis Seed Oil, Rosmarinus Officinalis Leaf Oil, Menthol, Tocopherol.',
     skinTypes: ['all'],
     routineStep: 'hair',
-    concerns: [{ slug: 'dryness', relevance: 6 }],
+    concerns: [{ slug: 'dryness-dehydration', relevance: 6 }],
     keyIngredients: [],
     variants: [
       {
@@ -1116,7 +1091,10 @@ export const products: SeedProduct[] = [
       'Aqua, Glycerin, Caprylic/Capric Triglyceride, Squalane, Iron Oxides, Titanium Dioxide, Tocopherol.',
     skinTypes: ['all'],
     routineStep: 'protect',
-    concerns: [{ slug: 'uneven-tone', relevance: 7 }],
+    concerns: [
+      { slug: 'dullness-uneven-tone', relevance: 7 },
+      { slug: 'dark-spots-pigmentation', relevance: 7 },
+    ],
     keyIngredients: ['squalane'],
     variants: [
       {
@@ -1169,7 +1147,7 @@ export const products: SeedProduct[] = [
       'Ricinus Communis Seed Oil, Cera Alba, Butyrospermum Parkii Butter, Squalane, Iron Oxides, Tocopherol.',
     skinTypes: ['all'],
     routineStep: 'moisturise',
-    concerns: [{ slug: 'dryness', relevance: 5 }],
+    concerns: [{ slug: 'dryness-dehydration', relevance: 5 }],
     keyIngredients: ['squalane'],
     isNew: true,
     variants: [
@@ -1214,9 +1192,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['dry', 'normal', 'sensitive'],
     routineStep: 'mask',
     concerns: [
-      { slug: 'dryness', relevance: 9 },
-      { slug: 'barrier-support', relevance: 8 },
-      { slug: 'dehydration', relevance: 7 },
+      { slug: 'dryness-dehydration', relevance: 9 },
+      { slug: 'sensitivity-redness', relevance: 8 },
     ],
     keyIngredients: ['ceramides', 'hyaluronic-acid', 'squalane'],
     variants: [
@@ -1248,9 +1225,10 @@ export const products: SeedProduct[] = [
     skinTypes: ['oily', 'combination', 'normal'],
     routineStep: 'treat',
     concerns: [
-      { slug: 'blemishes', relevance: 9 },
-      { slug: 'uneven-tone', relevance: 7 },
-      { slug: 'redness', relevance: 6 },
+      { slug: 'acne-blemishes', relevance: 9 },
+      { slug: 'dullness-uneven-tone', relevance: 7 },
+      { slug: 'dark-spots-pigmentation', relevance: 7 },
+      { slug: 'sensitivity-redness', relevance: 6 },
     ],
     keyIngredients: ['niacinamide'],
     variants: [
@@ -1285,8 +1263,8 @@ export const products: SeedProduct[] = [
     skinTypes: ['oily', 'combination', 'normal'],
     routineStep: 'moisturise',
     concerns: [
-      { slug: 'dehydration', relevance: 9 },
-      { slug: 'blemishes', relevance: 6 },
+      { slug: 'dryness-dehydration', relevance: 9 },
+      { slug: 'acne-blemishes', relevance: 6 },
     ],
     keyIngredients: ['hyaluronic-acid', 'niacinamide'],
     featured: true,

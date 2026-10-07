@@ -159,7 +159,7 @@ describe('listProducts', () => {
   dbIt('filters by concern', async () => {
     const filtered = await listProducts({
       pageSize: 96,
-      filters: { concernSlugs: ['dryness'] },
+      filters: { concernSlugs: ['dryness-dehydration'] },
     });
     expect(filtered.items.length).toBeGreaterThan(0);
   });

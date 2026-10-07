@@ -118,12 +118,9 @@ export function ConcernGrid({
             are separated by a 1px gap over the rule colour, and the image sits
             flush inside its cell rather than in a card of its own.
 
-            The imagery is the editorial concern set already in the media
-            library (`/media/editorial/concern-*`) — still lifes that carry the
-            mood: linen over cracked earth for dryness, a droplet on stone for
-            dehydration. Deliberately never a face or a close-up of skin. Those
-            would read as a photograph of a condition, and Nordic Lux does not
-            make claims about conditions. */}
+            The imagery is the editorial concern set in the media library
+            (`/media/editorial/concern-*`): warm, sunlit beauty portraits with
+            a circular skin close-up inset, one per concern. */}
         <ul className="border-line bg-line mt-12 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-3">
           {concerns.map((concern) => (
             <li key={concern.slug} className="bg-surface">

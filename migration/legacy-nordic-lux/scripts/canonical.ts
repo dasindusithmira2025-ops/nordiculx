@@ -581,19 +581,19 @@ const SKIN_TYPE_MAP: Record<string, string> = {
 };
 
 const CONCERN_MAP: Record<string, string[]> = {
-  'dry skin': ['dryness'],
-  hydration: ['dehydration'],
-  'dehydrated skin': ['dehydration'],
-  'sensitive skin': ['sensitivity'],
-  eczema: ['sensitivity'],
-  soothing: ['sensitivity'],
-  redness: ['redness'],
-  'acne-prone': ['blemishes'],
-  'blemish control': ['blemishes'],
-  brightening: ['dullness', 'uneven-tone'],
-  'anti-aging': ['firmness'],
-  'fine lines': ['firmness'],
-  'barrier repair': ['barrier-support'],
+  'dry skin': ['dryness-dehydration'],
+  hydration: ['dryness-dehydration'],
+  'dehydrated skin': ['dryness-dehydration'],
+  'sensitive skin': ['sensitivity-redness'],
+  eczema: ['sensitivity-redness'],
+  soothing: ['sensitivity-redness'],
+  redness: ['sensitivity-redness'],
+  'acne-prone': ['acne-blemishes'],
+  'blemish control': ['acne-blemishes'],
+  brightening: ['dullness-uneven-tone', 'dark-spots-pigmentation'],
+  'anti-aging': ['fine-lines-aging'],
+  'fine lines': ['fine-lines-aging'],
+  'barrier repair': ['dryness-dehydration', 'sensitivity-redness'],
 };
 
 function mapTags(tags: string[] | undefined) {

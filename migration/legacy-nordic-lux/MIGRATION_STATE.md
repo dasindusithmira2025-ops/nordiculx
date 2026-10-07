@@ -73,10 +73,12 @@ no bundled data). No JSON/CSV/XLSX/SQL product export exists.
 
 ### Concerns (existing rows only, no new taxonomy invented)
 
-`Dry Skin→dryness`, `Hydration`/`Dehydrated Skin→dehydration`,
-`Sensitive Skin`/`Eczema`/`Soothing→sensitivity`, `Redness→redness`,
-`Acne-Prone`/`Blemish Control→blemishes`, `Brightening→dullness + uneven-tone`,
-`Anti-Aging`/`Fine Lines→firmness`, `Barrier Repair→barrier-support`.
+`Dry Skin`/`Hydration`/`Dehydrated Skin→dryness-dehydration`,
+`Sensitive Skin`/`Eczema`/`Soothing`/`Redness→sensitivity-redness`,
+`Acne-Prone`/`Blemish Control→acne-blemishes`,
+`Brightening→dullness-uneven-tone + dark-spots-pigmentation`,
+`Anti-Aging`/`Fine Lines→fine-lines-aging`,
+`Barrier Repair→dryness-dehydration + sensitivity-redness`.
 
 ## Commands
 
