@@ -22,6 +22,7 @@ import {
 } from '@/components/commerce/product-card';
 import { EmptyState } from '@/components/ui/display';
 import { ButtonLink } from '@/components/ui/button';
+import { MobileFilterDrawer } from '@/components/catalogue/mobile-filter-drawer';
 import {
   CheckIcon,
   CloseIcon,
@@ -32,11 +33,9 @@ import {
 /**
  * Product listing furniture, shared by every route that shows a product grid.
  *
- * All of it is server-rendered and navigates by <Link>. Facets are links, not
- * checkboxes in a JS-controlled form, which means filtering works before
- * hydration, each refinement is a real URL, and the back button undoes exactly
- * one refinement. The only stateful widget is a <details> disclosure, which the
- * platform already implements.
+ * Facets navigate by <Link> so filters are shareable URLs. The only client
+ * boundary is the mobile drawer that makes the same filter controls usable with
+ * focus management and an explicit close action.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -724,16 +723,8 @@ export function ListingBody({
             {result.total} {result.total === 1 ? 'product' : 'products'}
           </p>
 
-          <div className="flex items-center gap-6">
-            {/* Mobile filter disclosure — same markup, different placement. */}
-            <details className="lg:hidden">
-              <summary className="eyebrow text-fg cursor-pointer list-none">
-                Filter
-              </summary>
-              <div className="border-line bg-surface fixed inset-x-0 bottom-0 z-40 max-h-[80dvh] overflow-y-auto border-t p-6 shadow-[0_-12px_48px_-20px_rgb(13_15_14/0.3)]">
-                {sidebar}
-              </div>
-            </details>
+          <div className="flex items-center gap-3">
+            <MobileFilterDrawer>{sidebar}</MobileFilterDrawer>
             <SortMenu
               pathname={pathname}
               searchParams={searchParams}

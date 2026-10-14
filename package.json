@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
+    "db:validate-financial-constraints": "tsx scripts/validate-financial-constraints.ts",
     "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:reset": "tsx scripts/reset.ts",

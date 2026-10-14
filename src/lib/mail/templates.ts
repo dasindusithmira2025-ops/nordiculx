@@ -69,8 +69,8 @@ export function orderConfirmationEmail(order: OrderDetail): MailMessage {
     }`,
     `  ${address.phone}`,
     ``,
-    `Track this order`,
-    `  ${publicConfig.appUrl}/track?reference=${order.reference}`,
+    `View this order`,
+    `  ${publicConfig.appUrl}/account/orders/${order.reference}`,
     ``,
     `We will email you again when it is dispatched.`,
     ``,
@@ -89,9 +89,15 @@ export function orderDispatchedEmail(order: OrderDetail): MailMessage {
     `Your order is on its way.`,
     ``,
     line('Order', order.reference),
+    ...(order.shipment?.carrier
+      ? [line('Carrier', order.shipment.carrier)]
+      : []),
+    ...(order.shipment?.trackingNumber
+      ? [line('Tracking number', order.shipment.trackingNumber)]
+      : []),
     ``,
-    `Track it here`,
-    `  ${publicConfig.appUrl}/track?reference=${order.reference}`,
+    `View delivery updates`,
+    `  ${publicConfig.appUrl}/account/orders/${order.reference}`,
     ``,
     `— ${publicConfig.appName}`,
   ].join('\n');

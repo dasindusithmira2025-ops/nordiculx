@@ -2,21 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { canMoveOrderTo } from '@/lib/orders/fulfilment';
 
 describe('canMoveOrderTo', () => {
-  it('never lets an unpaid order be fulfilled', () => {
+  it('never lets an unpaid order enter fulfilment', () => {
     for (const payment of ['pending', 'authorised', 'failed'] as const) {
-      expect(canMoveOrderTo('confirmed', payment)).toBe(false);
-      expect(canMoveOrderTo('dispatched', payment)).toBe(false);
-      expect(canMoveOrderTo('delivered', payment)).toBe(false);
+      expect(canMoveOrderTo('pending_payment', 'confirmed', payment)).toBe(
+        false,
+      );
+      expect(canMoveOrderTo('confirmed', 'dispatched', payment)).toBe(false);
     }
   });
 
-  it('still lets an unpaid order wait or be cancelled', () => {
-    expect(canMoveOrderTo('pending_payment', 'pending')).toBe(true);
-    expect(canMoveOrderTo('cancelled', 'failed')).toBe(true);
+  it('lets an unpaid order be cancelled but not rewound from fulfilment', () => {
+    expect(canMoveOrderTo('pending_payment', 'cancelled', 'pending')).toBe(
+      true,
+    );
+    expect(canMoveOrderTo('dispatched', 'cancelled', 'paid')).toBe(false);
   });
 
-  it('allows fulfilment once money was received', () => {
-    expect(canMoveOrderTo('dispatched', 'paid')).toBe(true);
-    expect(canMoveOrderTo('returned', 'refunded')).toBe(true);
+  it('permits only forward paid fulfilment transitions', () => {
+    expect(canMoveOrderTo('confirmed', 'dispatched', 'paid')).toBe(true);
+    expect(canMoveOrderTo('dispatched', 'in_transit', 'paid')).toBe(true);
+    expect(canMoveOrderTo('delivered', 'returned', 'paid')).toBe(true);
+    expect(canMoveOrderTo('dispatched', 'confirmed', 'paid')).toBe(false);
   });
 });

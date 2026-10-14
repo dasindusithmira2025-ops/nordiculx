@@ -375,6 +375,11 @@ export const payments = pgTable(
       t.provider,
       t.providerReference,
     ),
+    check('payments_amount_positive', sql`${t.amount} > 0`),
+    check(
+      'payments_refunded_amount_valid',
+      sql`${t.refundedAmount} >= 0 AND ${t.refundedAmount} <= ${t.amount}`,
+    ),
   ],
 );
 

@@ -81,6 +81,27 @@ order's current database status. Payment confirmation is row-locked and
 idempotent, while an expired Stripe session cancels once and writes compensating
 reservation ledger movements.
 
+## Refund accounting and integrity rollout
+
+Staff complete refunds in the payment provider first, then record the completed
+amount. `src/lib/payments/refunds.ts` row-locks the order and payment, caps
+cumulative refunds at the captured amount, and updates the local payment status;
+it never implies that a provider API refund occurred.
+
+Migration `0005_black_proudstar` adds price and refund checks as `NOT VALID` so
+existing hot tables are not scanned under a long `ACCESS EXCLUSIVE` lock. Before
+validation, reconcile historic provider refunds with `payments.refunded_amount`
+and correct invalid catalogue/payment rows through approved operational
+processes. Then, in a separate deployment step, run:
+
+```sh
+npm run db:validate-financial-constraints -- --confirm-provider-reconciliation
+```
+
+The command preflights both check predicates and validates them with a
+five-second lock timeout. It is safe to retry after a lock timeout; do not
+silently clamp financial history to make the preflight pass.
+
 ## Overlays
 
 Modal and drawer are a native `<dialog>` opened with `showModal()` — the

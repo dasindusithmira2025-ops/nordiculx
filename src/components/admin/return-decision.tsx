@@ -62,7 +62,7 @@ export function ReturnDecision({
       </label>
 
       <label className="block">
-        <span className="eyebrow text-fg-subtle">Refund (LKR)</span>
+        <span className="eyebrow text-fg-subtle">Refund completed in provider (LKR)</span>
         <input
           name="refundAmount"
           inputMode="decimal"
@@ -71,6 +71,10 @@ export function ReturnDecision({
           className={adminField}
         />
       </label>
+      <p className="text-fg-subtle text-xs lg:col-span-4">
+        Complete the payment-provider refund first. Enter its amount only when
+        moving this return to Refunded.
+      </p>
 
       <label className="block">
         <span className="eyebrow text-fg-subtle">Note to customer</span>

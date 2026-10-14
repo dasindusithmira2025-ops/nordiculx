@@ -8,11 +8,9 @@ import { Field, FieldLabel, Input, Select } from '@/components/ui/field';
 /**
  * Status transition control.
  *
- * The whole enum is offered rather than a computed "next allowed step". Real
- * fulfilment goes backwards — a packed order gets unpacked, a dispatch is
- * recalled — and a UI that only moves forward gets worked around by editing the
- * database, which is far worse. The note is what explains the jump, and it is
- * shown to the customer on their tracking timeline.
+ * The server and its options share one legal transition graph. Tracking fields
+ * are optional because a dispatch can leave the warehouse before a courier
+ * assigns a number, but any supplied URL is validated before it is stored.
  */
 export function OrderStatusForm({
   reference,
@@ -53,6 +51,29 @@ export function OrderStatusForm({
         <FieldLabel optional>Note</FieldLabel>
         <Input name="note" placeholder="Handed to the courier" />
       </Field>
+
+      <fieldset className="border-line space-y-4 border p-4">
+        <legend className="eyebrow text-fg-subtle px-1">
+          Shipment tracking
+        </legend>
+        <Field>
+          <FieldLabel optional>Carrier</FieldLabel>
+          <Input name="carrier" placeholder="Domex" />
+        </Field>
+        <Field>
+          <FieldLabel optional>Tracking number</FieldLabel>
+          <Input name="trackingNumber" placeholder="DX123456789LK" />
+        </Field>
+        <Field>
+          <FieldLabel optional>Tracking link</FieldLabel>
+          <Input
+            name="trackingUrl"
+            type="url"
+            inputMode="url"
+            placeholder="https://carrier.example/track/DX123456789LK"
+          />
+        </Field>
+      </fieldset>
 
       {error ? (
         <p role="alert" className="text-signal-danger text-sm">

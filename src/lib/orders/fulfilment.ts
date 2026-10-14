@@ -1,25 +1,44 @@
 import type { OrderStatus, PaymentStatus } from '@/lib/db/schema';
 
 /**
- * Whether an order may be moved to `next` given what has been paid.
- *
- * An order exists from the moment "Place order" is clicked — before the
- * customer has paid — so an abandoned payment leaves a real-looking order in
- * the admin. Until the provider confirms payment it may only wait or be
- * cancelled; every fulfilment status would ship goods nobody paid for.
+ * A paid order may take only the next physical fulfilment step. The limited
+ * shortcuts to dispatch keep the single-step warehouse workflow practical
+ * without permitting a shipped order to re-enter the dispatch transition.
  */
-const UNPAID_ALLOWED: readonly OrderStatus[] = ['pending_payment', 'cancelled'];
-const MONEY_RECEIVED: readonly PaymentStatus[] = [
-  'paid',
-  'partially_refunded',
-  'refunded',
-];
+const PAID_NEXT: Readonly<Record<OrderStatus, readonly OrderStatus[]>> = {
+  pending_payment: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'packed', 'dispatched', 'cancelled'],
+  preparing: ['packed', 'dispatched', 'cancelled'],
+  packed: ['dispatched', 'cancelled'],
+  dispatched: ['in_transit', 'out_for_delivery', 'delivered'],
+  in_transit: ['out_for_delivery', 'delivered'],
+  out_for_delivery: ['delivered'],
+  delivered: ['returned'],
+  cancelled: [],
+  returned: [],
+};
 
+/**
+ * Legal next statuses excluding the current status. Keeping the graph here
+ * lets the admin UI and the action enforce exactly the same state contract.
+ */
+export function nextOrderStatuses(
+  current: OrderStatus,
+  paymentStatus: PaymentStatus,
+): readonly OrderStatus[] {
+  if (paymentStatus === 'paid' || paymentStatus === 'partially_refunded') {
+    return PAID_NEXT[current];
+  }
+  return current === 'pending_payment' ? ['cancelled'] : [];
+}
+
+/** Whether an order may move from its current state to the requested state. */
 export function canMoveOrderTo(
+  current: OrderStatus,
   next: OrderStatus,
   paymentStatus: PaymentStatus,
 ): boolean {
   return (
-    UNPAID_ALLOWED.includes(next) || MONEY_RECEIVED.includes(paymentStatus)
+    current === next || nextOrderStatuses(current, paymentStatus).includes(next)
   );
 }

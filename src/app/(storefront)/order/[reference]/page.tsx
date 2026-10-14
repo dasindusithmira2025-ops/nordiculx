@@ -6,7 +6,7 @@ import { getOrderForVisitor } from '@/lib/orders';
 import { paymentProvider } from '@/lib/payments';
 import { ButtonLink } from '@/components/ui/button';
 import { OrderDetailView } from '@/components/commerce/order-detail';
-import { CheckIcon } from '@/components/ui/icons';
+import { AlertIcon, CheckIcon, SpinnerIcon } from '@/components/ui/icons';
 
 export const metadata: Metadata = {
   title: 'Your order — Nordic Lux',
@@ -41,15 +41,32 @@ export default async function OrderConfirmationPage({
     paymentProvider === 'payhere' &&
     order.status === 'pending_payment' &&
     order.paymentStatus !== 'paid';
+  const paymentSucceeded = order.paymentStatus === 'paid';
+  const paymentInterrupted =
+    order.status === 'cancelled' ||
+    returnedFromCancellation ||
+    order.paymentStatus === 'failed';
 
   return (
     <div className="page-x mx-auto max-w-3xl pt-12 pb-28">
       <div className="text-center">
         <span
           aria-hidden
-          className="border-line-strong text-fg mx-auto flex size-14 items-center justify-center rounded-full border"
+          className={
+            paymentSucceeded
+              ? 'border-signal-success text-signal-success mx-auto flex size-14 items-center justify-center rounded-full border'
+              : paymentInterrupted
+                ? 'border-signal-danger text-signal-danger mx-auto flex size-14 items-center justify-center rounded-full border'
+                : 'border-line-strong text-fg-muted mx-auto flex size-14 items-center justify-center rounded-full border'
+          }
         >
-          <CheckIcon width={22} height={22} />
+          {paymentSucceeded ? (
+            <CheckIcon width={22} height={22} />
+          ) : paymentInterrupted ? (
+            <AlertIcon width={22} height={22} />
+          ) : (
+            <SpinnerIcon width={22} height={22} />
+          )}
         </span>
         <h1 className="font-display text-display-lg text-fg mt-8">
           {order.paymentStatus === 'paid'

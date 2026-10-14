@@ -132,7 +132,11 @@ export default async function AdminOrdersPage({
                       <Badge tone="neutral">
                         {ORDER_STATUS_LABELS[order.status]}
                       </Badge>
-                      {order.paymentStatus !== 'paid' ? (
+                      {order.status === 'cancelled' &&
+                      (order.paymentStatus === 'paid' ||
+                        order.paymentStatus === 'partially_refunded') ? (
+                        <Badge tone="out">Refund required</Badge>
+                      ) : order.paymentStatus !== 'paid' ? (
                         <Badge tone="low">{order.paymentStatus}</Badge>
                       ) : null}
                     </span>

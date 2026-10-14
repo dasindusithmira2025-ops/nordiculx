@@ -82,6 +82,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    authInterrupts: true,
     optimizePackageImports: ['@/components/ui'],
   },
   async headers() {

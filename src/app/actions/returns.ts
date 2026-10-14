@@ -1,10 +1,15 @@
 'use server';
 
+import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { orders, returnItems, returnRequests } from '@/lib/db/schema';
+import {
+  orderItems,
+  orders,
+  returnItems,
+  returnRequests,
+} from '@/lib/db/schema';
 import { currentUser, requireStaff } from '@/lib/auth';
 import { recordAudit } from '@/lib/admin/audit';
 import { generateReference } from '@/lib/tokens';
@@ -14,9 +19,15 @@ import { returnStatusEnum } from '@/lib/db/schema';
 import {
   actionError,
   actionOk,
+  toFieldErrors,
   uuidSchema,
   type ActionResult,
 } from '@/lib/validation';
+import { parseMoneyInput } from '@/lib/money';
+import {
+  RefundAccountingError,
+  recordCompletedRefund,
+} from '@/lib/payments/refunds';
 
 /**
  * Return requests.
@@ -58,50 +69,54 @@ export async function requestReturn(
     return actionError('Choose a reason for the return.');
   }
 
-  // The ownership check: the order is matched on reference AND user id, so a
-  // guessed reference belonging to somebody else simply does not exist here.
-  const owned = await db
-    .select({ id: orders.id })
-    .from(orders)
-    .where(
-      and(
-        eq(orders.reference, parsed.data.reference),
-        eq(orders.userId, user.id),
-      ),
-    )
-    .limit(1);
-  const order = owned[0];
-  if (!order) return actionError('That order could not be found.');
+  // The order row lock serialises return claims for a single order. The
+  // eligibility read follows that lock, so a second tab sees the first request
+  // before it can insert overlapping return items.
+  const result:
+    | { ok: true; reference: string; orderReference: string }
+    | { ok: false; error: string } = await db.transaction(async (tx) => {
+    const owned = await tx
+      .select({ id: orders.id })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.reference, parsed.data.reference),
+          eq(orders.userId, user.id),
+        ),
+      )
+      .for('update')
+      .limit(1);
+    const order = owned[0];
+    if (!order) return { ok: false, error: 'That order could not be found.' };
 
-  // Quantities are read from the form but bounded by what is actually
-  // returnable — a hand-edited quantity is clamped, never trusted.
-  const eligibility = await returnEligibility(order.id);
-  if (!eligibility.eligible) {
-    return actionError(
-      eligibility.reason === 'window_closed'
-        ? 'The return window for this order has closed.'
-        : eligibility.reason === 'nothing_left'
-          ? 'Everything on this order has already been returned.'
-          : 'Returns open once an order has been delivered.',
-    );
-  }
+    const eligibility = await returnEligibility(order.id);
+    if (!eligibility.eligible) {
+      return {
+        ok: false,
+        error:
+          eligibility.reason === 'window_closed'
+            ? 'The return window for this order has closed.'
+            : eligibility.reason === 'nothing_left'
+              ? 'Everything on this order has already been returned.'
+              : 'Returns open once an order has been delivered.',
+      };
+    }
 
-  const lines = eligibility.items.flatMap((item) => {
-    const raw = Number(formData.get(`qty:${item.orderItemId}`) ?? 0);
-    const quantity = Math.min(
-      item.returnable,
-      Number.isInteger(raw) && raw > 0 ? raw : 0,
-    );
-    return quantity > 0 ? [{ orderItemId: item.orderItemId, quantity }] : [];
-  });
+    // Quantities are read from the form but bounded by what is actually
+    // returnable — a hand-edited quantity is clamped, never trusted.
+    const lines = eligibility.items.flatMap((item) => {
+      const raw = Number(formData.get(`qty:${item.orderItemId}`) ?? 0);
+      const quantity = Math.min(
+        item.returnable,
+        Number.isInteger(raw) && raw > 0 ? raw : 0,
+      );
+      return quantity > 0 ? [{ orderItemId: item.orderItemId, quantity }] : [];
+    });
+    if (lines.length === 0) {
+      return { ok: false, error: 'Choose at least one item to return.' };
+    }
 
-  if (lines.length === 0) {
-    return actionError('Choose at least one item to return.');
-  }
-
-  const reference = generateReference('NLR');
-
-  await db.transaction(async (tx) => {
+    const reference = generateReference('NLR');
     const [request] = await tx
       .insert(returnRequests)
       .values({
@@ -113,42 +128,53 @@ export async function requestReturn(
         status: 'requested',
       })
       .returning({ id: returnRequests.id });
+    if (!request) throw new Error('Return request could not be created.');
 
     await tx
       .insert(returnItems)
-      .values(lines.map((line) => ({ ...line, returnRequestId: request!.id })));
+      .values(lines.map((line) => ({ ...line, returnRequestId: request.id })));
+    return { ok: true, reference, orderReference: parsed.data.reference };
   });
 
-  revalidatePath(`/account/orders/${parsed.data.reference}`);
+  if (!result.ok) return actionError(result.error);
+  revalidatePath(`/account/orders/${result.orderReference}`);
   revalidatePath('/admin/returns');
-  return actionOk({ reference });
+  return actionOk({ reference: result.reference });
 }
 
 /* --- admin ---------------------------------------------------------------- */
 
-const decisionSchema = z.object({
-  id: uuidSchema,
-  status: z.enum(returnStatusEnum.enumValues),
-  staffNote: z.string().trim().max(1000),
-  refundAmount: z
-    .string()
-    .trim()
-    .transform((value) =>
-      value === '' ? null : Math.round(Number(value) * 100),
-    )
-    .refine(
-      (value) => value === null || (Number.isInteger(value) && value >= 0),
-      { message: 'Enter a valid refund amount.' },
-    ),
-});
+const decisionSchema = z
+  .object({
+    id: uuidSchema,
+    status: z.enum(returnStatusEnum.enumValues),
+    staffNote: z.string().trim().max(1000),
+    refundAmount: z
+      .string()
+      .trim()
+      .transform((value) => (value === '' ? null : parseMoneyInput(value)))
+      .refine(
+        (value) => value === null || (Number.isInteger(value) && value > 0),
+        { message: 'Enter a valid refund amount.' },
+      ),
+  })
+  .superRefine((value, context) => {
+    if (value.status === 'refunded' && value.refundAmount === null) {
+      context.addIssue({
+        code: 'custom',
+        path: ['refundAmount'],
+        message:
+          'Enter the amount already refunded through the payment provider.',
+      });
+    }
+  });
 
-/** Moves a return along its workflow. */
+/** Moves a return along its workflow and records an already-completed refund. */
 export async function decideReturn(
   _previous: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
   const actor = await requireStaff('returns.manage');
-
   const parsed = decisionSchema.safeParse({
     id: String(formData.get('id') ?? ''),
     status: formData.get('status'),
@@ -156,58 +182,210 @@ export async function decideReturn(
     refundAmount: String(formData.get('refundAmount') ?? ''),
   });
   if (!parsed.success) {
-    return actionError('That return could not be updated.');
-  }
-
-  const rows = await db
-    .select({
-      id: returnRequests.id,
-      status: returnRequests.status,
-      orderId: returnRequests.orderId,
-    })
-    .from(returnRequests)
-    .where(eq(returnRequests.id, parsed.data.id))
-    .limit(1);
-  const request = rows[0];
-  if (!request) return actionError('That return could not be found.');
-
-  // The transition table is the authority, not the form: a rejected or
-  // refunded return is terminal, so a stale page cannot refund one twice.
-  if (!nextStatuses(request.status).includes(parsed.data.status)) {
     return actionError(
-      `A ${request.status} return cannot be moved to ${parsed.data.status}.`,
+      'That return could not be updated.',
+      toFieldErrors(parsed.error),
     );
   }
 
-  const now = new Date();
-  await db
-    .update(returnRequests)
-    .set({
-      status: parsed.data.status,
-      staffNote: parsed.data.staffNote || null,
-      reviewedBy: actor.id,
-      reviewedAt: now,
-      refundAmount: parsed.data.refundAmount,
-      refundedAt: parsed.data.status === 'refunded' ? now : null,
-      updatedAt: now,
-    })
-    .where(eq(returnRequests.id, request.id));
+  let result: { ok: true; reference: string } | { ok: false; error: string };
+  try {
+    result = await db.transaction(async (tx) => {
+      const requests = await tx
+        .select({
+          id: returnRequests.id,
+          status: returnRequests.status,
+          orderId: returnRequests.orderId,
+          refundAmount: returnRequests.refundAmount,
+          refundedAt: returnRequests.refundedAt,
+        })
+        .from(returnRequests)
+        .where(eq(returnRequests.id, parsed.data.id))
+        .for('update')
+        .limit(1);
+      const request = requests[0];
+      if (!request) {
+        return { ok: false, error: 'That return could not be found.' };
+      }
+      if (!nextStatuses(request.status).includes(parsed.data.status)) {
+        return {
+          ok: false,
+          error: `A ${request.status} return cannot be moved to ${parsed.data.status}.`,
+        };
+      }
 
-  await recordAudit({
-    actor,
-    action: 'return.status_changed',
-    entityType: 'return_request',
-    entityId: request.id,
-    changes: { status: { from: request.status, to: parsed.data.status } },
-  });
+      const orderRows = await tx
+        .select({ reference: orders.reference })
+        .from(orders)
+        .where(eq(orders.id, request.orderId))
+        .for('update')
+        .limit(1);
+      const order = orderRows[0];
+      if (!order) return { ok: false, error: 'Order not found.' };
 
-  const order = await db
-    .select({ reference: orders.reference })
-    .from(orders)
-    .where(eq(orders.id, request.orderId))
-    .limit(1);
+      if (parsed.data.status === 'refunded') {
+        const eligibleRows = await tx
+          .select({
+            value: sql<number>`COALESCE(SUM(${returnItems.quantity} * ${orderItems.unitPrice}), 0)::int`,
+          })
+          .from(returnItems)
+          .innerJoin(orderItems, eq(orderItems.id, returnItems.orderItemId))
+          .where(eq(returnItems.returnRequestId, request.id));
+        const eligibleAmount = eligibleRows[0]?.value ?? 0;
+        if (parsed.data.refundAmount! > eligibleAmount) {
+          return {
+            ok: false,
+            error: 'The refund cannot exceed the returned items’ value.',
+          };
+        }
+        await recordCompletedRefund(tx, {
+          orderId: request.orderId,
+          amount: parsed.data.refundAmount!,
+        });
+      }
 
+      const now = new Date();
+      await tx
+        .update(returnRequests)
+        .set({
+          status: parsed.data.status,
+          staffNote: parsed.data.staffNote || null,
+          reviewedBy: actor.id,
+          reviewedAt: now,
+          refundAmount:
+            parsed.data.status === 'refunded'
+              ? parsed.data.refundAmount
+              : request.refundAmount,
+          refundedAt:
+            parsed.data.status === 'refunded' ? now : request.refundedAt,
+          updatedAt: now,
+        })
+        .where(eq(returnRequests.id, request.id));
+
+      await recordAudit({
+        actor,
+        action: 'return.status_changed',
+        entityType: 'return_request',
+        entityId: request.id,
+        changes: {
+          status: { from: request.status, to: parsed.data.status },
+          ...(parsed.data.status === 'refunded'
+            ? {
+                refundAmount: {
+                  from: request.refundAmount,
+                  to: parsed.data.refundAmount,
+                },
+              }
+            : {}),
+        },
+        tx,
+      });
+
+      return { ok: true, reference: order.reference };
+    });
+  } catch (error) {
+    if (error instanceof RefundAccountingError) {
+      return actionError(error.message);
+    }
+    throw error;
+  }
+
+  if (!result.ok) return actionError(result.error);
   revalidatePath('/admin/returns');
-  if (order[0]) revalidatePath(`/account/orders/${order[0].reference}`);
+  revalidatePath(`/account/orders/${result.reference}`);
   return actionOk();
+}
+
+const cancelledOrderRefundSchema = z.object({
+  reference: z.string().trim().min(1).max(40),
+  refundAmount: z
+    .string()
+    .trim()
+    .transform((value) => parseMoneyInput(value))
+    .refine(
+      (value): value is number =>
+        value !== null && Number.isInteger(value) && value > 0,
+      { message: 'Enter a refund amount greater than zero.' },
+    ),
+});
+
+/**
+ * Records a refund completed in the payment provider for a cancelled order.
+ * Provider refund APIs are intentionally not invoked here: only a verified
+ * provider result may be represented as money returned to the customer.
+ */
+export async function recordCancelledOrderRefund(
+  _previous: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const actor = await requireStaff('returns.manage');
+  const parsed = cancelledOrderRefundSchema.safeParse({
+    reference: String(formData.get('reference') ?? ''),
+    refundAmount: String(formData.get('refundAmount') ?? ''),
+  });
+  if (!parsed.success) {
+    return actionError(
+      'That refund could not be recorded.',
+      toFieldErrors(parsed.error),
+    );
+  }
+
+  try {
+    const result:
+      { ok: true; reference: string } | { ok: false; error: string } =
+      await db.transaction(async (tx) => {
+        const orderRows = await tx
+          .select({
+            id: orders.id,
+            status: orders.status,
+            paymentStatus: orders.paymentStatus,
+          })
+          .from(orders)
+          .where(eq(orders.reference, parsed.data.reference))
+          .for('update')
+          .limit(1);
+        const order = orderRows[0];
+        if (!order) return { ok: false, error: 'Order not found.' };
+        if (order.status !== 'cancelled') {
+          return {
+            ok: false,
+            error: 'Only a cancelled order can be refunded from this screen.',
+          };
+        }
+
+        const refund = await recordCompletedRefund(tx, {
+          orderId: order.id,
+          amount: parsed.data.refundAmount,
+        });
+        await recordAudit({
+          actor,
+          action: 'order.refund_recorded',
+          entityType: 'order',
+          entityId: order.id,
+          changes: {
+            paymentStatus: {
+              from: order.paymentStatus,
+              to: refund.paymentStatus,
+            },
+            refundedAmount: {
+              from: refund.previousRefundedAmount,
+              to: refund.refundedAmount,
+            },
+          },
+          tx,
+        });
+        return { ok: true, reference: refund.reference };
+      });
+
+    if (!result.ok) return actionError(result.error);
+    revalidatePath('/admin/orders');
+    revalidatePath(`/admin/orders/${result.reference}`);
+    revalidatePath(`/account/orders/${result.reference}`);
+    return actionOk();
+  } catch (error) {
+    if (error instanceof RefundAccountingError) {
+      return actionError(error.message);
+    }
+    throw error;
+  }
 }

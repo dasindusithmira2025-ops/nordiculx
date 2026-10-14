@@ -16,9 +16,9 @@ const dateFormat = new Intl.DateTimeFormat('en-GB', {
 /**
  * Review moderation queue.
  *
- * Pending first, because that is the only tab with work in it. The full body is
- * shown rather than a truncated preview — moderating from an excerpt is how
- * abuse slips through.
+ * The full body is shown rather than a truncated preview — moderating from an
+ * excerpt is how abuse slips through. Every state remains actionable, so a
+ * mistaken published review can be withdrawn.
  */
 export default async function AdminReviewsPage({
   searchParams,
@@ -107,11 +107,9 @@ export default async function AdminReviewsPage({
                 · {dateFormat.format(review.createdAt)}
               </p>
 
-              {status === 'pending' ? (
-                <div className="border-line mt-5 border-t pt-5">
-                  <ReviewModeration id={review.id} />
-                </div>
-              ) : null}
+              <div className="border-line mt-5 border-t pt-5">
+                <ReviewModeration id={review.id} status={review.status} />
+              </div>
             </li>
           ))}
         </ul>

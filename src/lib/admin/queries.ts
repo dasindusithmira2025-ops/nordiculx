@@ -78,41 +78,65 @@ export async function listOrders(
   }));
 }
 
-/** Headline numbers for the dashboard, in one round trip. */
-export async function getAdminOverview() {
+/** Headline numbers for the dashboard, scoped to data the role may view. */
+export async function getAdminOverview(options: {
+  orders: boolean;
+  revenue: boolean;
+  reviews: boolean;
+  support: boolean;
+  inventory: boolean;
+}) {
+  const fields = [
+    options.orders
+      ? sql`(SELECT COUNT(*)::int FROM orders
+          WHERE status NOT IN ('delivered','cancelled','returned')) AS open_orders`
+      : sql`NULL::int AS open_orders`,
+    options.orders
+      ? sql`(SELECT COUNT(*)::int FROM orders
+          WHERE created_at >= NOW() - INTERVAL '7 days') AS orders_7d`
+      : sql`NULL::int AS orders_7d`,
+    options.revenue
+      ? sql`(SELECT COALESCE(SUM(grand_total),0)::bigint FROM orders
+          WHERE payment_status = 'paid'
+            AND status <> 'cancelled'
+            AND created_at >= NOW() - INTERVAL '7 days') AS revenue_7d`
+      : sql`NULL::bigint AS revenue_7d`,
+    options.reviews
+      ? sql`(SELECT COUNT(*)::int FROM reviews WHERE status = 'pending') AS pending_reviews`
+      : sql`NULL::int AS pending_reviews`,
+    options.support
+      ? sql`(SELECT COUNT(*)::int FROM support_tickets WHERE status = 'open') AS open_tickets`
+      : sql`NULL::int AS open_tickets`,
+    options.inventory
+      ? sql`(SELECT COUNT(*)::int FROM inventory_items i
+          JOIN product_variants pv ON pv.id = i.variant_id
+          WHERE pv.deleted_at IS NULL
+            AND (i.on_hand - i.reserved) <= i.low_stock_threshold) AS low_stock`
+      : sql`NULL::int AS low_stock`,
+  ];
+
   const rows = (await db.execute(sql`
-    SELECT
-      (SELECT COUNT(*)::int FROM orders
-        WHERE status NOT IN ('delivered','cancelled','returned')) AS open_orders,
-      (SELECT COUNT(*)::int FROM orders
-        WHERE created_at >= NOW() - INTERVAL '7 days') AS orders_7d,
-      (SELECT COALESCE(SUM(grand_total),0)::bigint FROM orders
-        WHERE payment_status = 'paid'
-          AND created_at >= NOW() - INTERVAL '7 days') AS revenue_7d,
-      (SELECT COUNT(*)::int FROM reviews WHERE status = 'pending') AS pending_reviews,
-      (SELECT COUNT(*)::int FROM support_tickets WHERE status = 'open') AS open_tickets,
-      (SELECT COUNT(*)::int FROM inventory_items i
-         JOIN product_variants pv ON pv.id = i.variant_id
-        WHERE pv.deleted_at IS NULL
-          AND (i.on_hand - i.reserved) <= i.low_stock_threshold) AS low_stock
+    SELECT ${sql.join(fields, sql`, `)}
   `)) as unknown as {
-    open_orders: number;
-    orders_7d: number;
-    revenue_7d: string | number;
-    pending_reviews: number;
-    open_tickets: number;
-    low_stock: number;
+    open_orders: number | null;
+    orders_7d: number | null;
+    revenue_7d: string | number | null;
+    pending_reviews: number | null;
+    open_tickets: number | null;
+    low_stock: number | null;
   }[];
 
   const row = rows[0];
   return {
-    openOrders: row?.open_orders ?? 0,
-    orders7d: row?.orders_7d ?? 0,
-    // bigint comes back as a string; Number is safe at these magnitudes.
-    revenue7d: Number(row?.revenue_7d ?? 0),
-    pendingReviews: row?.pending_reviews ?? 0,
-    openTickets: row?.open_tickets ?? 0,
-    lowStock: row?.low_stock ?? 0,
+    openOrders: row?.open_orders ?? null,
+    orders7d: row?.orders_7d ?? null,
+    revenue7d:
+      row?.revenue_7d === null || row?.revenue_7d === undefined
+        ? null
+        : Number(row.revenue_7d),
+    pendingReviews: row?.pending_reviews ?? null,
+    openTickets: row?.open_tickets ?? null,
+    lowStock: row?.low_stock ?? null,
   };
 }
 
@@ -396,7 +420,8 @@ export async function listReviews(
 
 export async function listSupportTickets() {
   const rows = (await db.execute(sql`
-    SELECT id, reference, name, email, subject, status, created_at
+    SELECT id, reference, name, email, phone, subject, message, order_reference,
+           status, created_at
       FROM support_tickets
      ORDER BY (status = 'open') DESC, created_at DESC
      LIMIT 100
@@ -405,10 +430,24 @@ export async function listSupportTickets() {
     reference: string;
     name: string;
     email: string;
+    phone: string | null;
     subject: string;
+    message: string;
+    order_reference: string | null;
     status: string;
     created_at: string | Date;
   }[];
 
-  return rows.map((r) => ({ ...r, createdAt: new Date(r.created_at) }));
+  return rows.map((row) => ({
+    id: row.id,
+    reference: row.reference,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    subject: row.subject,
+    message: row.message,
+    orderReference: row.order_reference,
+    status: row.status,
+    createdAt: new Date(row.created_at),
+  }));
 }

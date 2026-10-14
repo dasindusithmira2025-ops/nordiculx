@@ -54,6 +54,17 @@ the final crumb marked `aria-current="page"` and not a link.
 **Filter facets** are links. A facet that cannot return results is
 `aria-disabled` and removed from the tab order rather than deleted from the DOM.
 
+**Mobile filters.** The listing filter trigger opens the shared bottom
+`Drawer`, rather than a fixed `<details>` sheet. The native dialog gives the
+sheet focus management, Escape dismissal and an explicit close control while
+the facet links retain their ordinary URL navigation.
+
+**Product selection.** Variant choices are native radios with a
+`focus-within` outline on their visible labels; unavailable variants are
+disabled. Quantity remains a named number input between increment/decrement
+buttons. It permits a temporary empty draft while typing, then restores the
+minimum on blur rather than trapping keyboard users at the initial value.
+
 ## Content
 
 - One `<h1>` per page, from `PageHeader`.

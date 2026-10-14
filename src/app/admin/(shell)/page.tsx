@@ -23,37 +23,74 @@ const dateFormat = new Intl.DateTimeFormat('en-GB', {
  */
 export default async function AdminDashboard() {
   const user = await requireStaff();
-  const canSeeOrders = await staffCan('orders.view');
+  const [
+    canSeeOrders,
+    canManageOrders,
+    canModerateReviews,
+    canSeeSupport,
+    canSeeProducts,
+  ] = await Promise.all([
+    staffCan('orders.view'),
+    staffCan('orders.manage'),
+    staffCan('reviews.moderate'),
+    staffCan('support.view'),
+    staffCan('products.view'),
+  ]);
 
   const [overview, recent] = await Promise.all([
-    getAdminOverview(),
+    getAdminOverview({
+      orders: canSeeOrders,
+      revenue: canManageOrders,
+      reviews: canModerateReviews,
+      support: canSeeSupport,
+      inventory: canSeeProducts,
+    }),
     canSeeOrders ? listOrders({ limit: 8 }) : Promise.resolve([]),
   ]);
 
-  const stats = [
-    { label: 'Open orders', value: overview.openOrders, href: '/admin/orders' },
-    {
-      label: 'Orders, 7 days',
-      value: overview.orders7d,
-      href: '/admin/orders',
-    },
-    {
+  const stats: { label: string; value: string | number; href: string }[] = [];
+  if (canSeeOrders) {
+    stats.push(
+      {
+        label: 'Open orders',
+        value: overview.openOrders ?? 0,
+        href: '/admin/orders',
+      },
+      {
+        label: 'Orders, 7 days',
+        value: overview.orders7d ?? 0,
+        href: '/admin/orders',
+      },
+    );
+  }
+  if (canManageOrders) {
+    stats.push({
       label: 'Revenue, 7 days',
-      value: formatMoney(overview.revenue7d),
+      value: formatMoney(overview.revenue7d ?? 0),
       href: '/admin/orders',
-    },
-    {
+    });
+  }
+  if (canModerateReviews) {
+    stats.push({
       label: 'Reviews waiting',
-      value: overview.pendingReviews,
+      value: overview.pendingReviews ?? 0,
       href: '/admin/reviews',
-    },
-    {
+    });
+  }
+  if (canSeeSupport) {
+    stats.push({
       label: 'Open tickets',
-      value: overview.openTickets,
+      value: overview.openTickets ?? 0,
       href: '/admin/support',
-    },
-    { label: 'Low stock', value: overview.lowStock, href: '/admin/products' },
-  ];
+    });
+  }
+  if (canSeeProducts) {
+    stats.push({
+      label: 'Low stock',
+      value: overview.lowStock ?? 0,
+      href: '/admin/products',
+    });
+  }
 
   // Configuration that is fine locally and must not reach production. Surfaced
   // here because a warning nobody sees is not a warning.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { MinusIcon, PlusIcon } from '@/components/ui/icons';
 
@@ -31,7 +31,17 @@ export function QuantityStepper({
   className?: string;
 }) {
   const id = useId();
-  const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  const [draft, setDraft] = useState({ forValue: value, raw: String(value) });
+  const inputValue = draft.forValue === value ? draft.raw : String(value);
+  const clamp = (quantity: number) => Math.min(max, Math.max(min, quantity));
+
+  const commit = (raw: string) => {
+    const next = Number(raw);
+    if (!Number.isInteger(next)) return;
+    const quantity = clamp(next);
+    setDraft({ forValue: quantity, raw: String(quantity) });
+    onChange(quantity);
+  };
 
   const box = size === 'sm' ? 'h-9' : 'h-11';
   const button = size === 'sm' ? 'size-9' : 'size-11';
@@ -47,7 +57,11 @@ export function QuantityStepper({
     >
       <button
         type="button"
-        onClick={() => onChange(clamp(value - 1))}
+        onClick={() => {
+          const quantity = clamp(value - 1);
+          setDraft({ forValue: quantity, raw: String(quantity) });
+          onChange(quantity);
+        }}
         disabled={disabled || value <= min}
         aria-label={`Decrease ${label.toLowerCase()}`}
         aria-controls={id}
@@ -65,20 +79,37 @@ export function QuantityStepper({
         type="number"
         inputMode="numeric"
         aria-label={label}
-        value={value}
+        value={inputValue}
         min={min}
         max={max}
         disabled={disabled}
-        onChange={(e) => {
-          const next = Number(e.target.value);
-          if (Number.isFinite(next)) onChange(clamp(next));
+        onChange={(event) => {
+          const raw = event.target.value;
+          setDraft({ forValue: value, raw });
+          if (raw !== '') commit(raw);
+        }}
+        onBlur={() => {
+          if (inputValue === '') {
+            setDraft({ forValue: min, raw: String(min) });
+            onChange(min);
+            return;
+          }
+          if (!Number.isInteger(Number(inputValue))) {
+            setDraft({ forValue: value, raw: String(value) });
+            return;
+          }
+          commit(inputValue);
         }}
         className="text-fg focus-visible:outline-focus h-full w-10 border-0 bg-transparent p-0 text-center text-sm tabular-nums focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
       />
 
       <button
         type="button"
-        onClick={() => onChange(clamp(value + 1))}
+        onClick={() => {
+          const quantity = clamp(value + 1);
+          setDraft({ forValue: quantity, raw: String(quantity) });
+          onChange(quantity);
+        }}
         disabled={disabled || value >= max}
         aria-label={`Increase ${label.toLowerCase()}`}
         aria-controls={id}

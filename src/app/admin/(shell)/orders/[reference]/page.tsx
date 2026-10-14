@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireStaff, staffCan } from '@/lib/auth';
 import { getOrderByReference } from '@/lib/orders';
+import { nextOrderStatuses } from '@/lib/orders/fulfilment';
 import { ORDER_STATUS_LABELS } from '@/lib/account';
-import { orderStatusEnum } from '@/lib/db/schema';
 import { OrderDetailView } from '@/components/commerce/order-detail';
+import { OrderRefundForm } from '@/components/admin/order-refund-form';
 import { OrderStatusForm } from '@/components/admin/order-status-form';
 
 /**
@@ -21,13 +22,18 @@ export default async function AdminOrderPage({
   params: Promise<{ reference: string }>;
 }) {
   await requireStaff('orders.view');
-  const canManage = await staffCan('orders.manage');
-
+  const [canManage, canRecordRefund] = await Promise.all([
+    staffCan('orders.manage'),
+    staffCan('returns.manage'),
+  ]);
   const { reference } = await params;
   const order = await getOrderByReference(reference.toUpperCase());
   if (!order) notFound();
 
-  const options = orderStatusEnum.enumValues.map((value) => ({
+  const options = [
+    order.status,
+    ...nextOrderStatuses(order.status, order.paymentStatus),
+  ].map((value) => ({
     value,
     label: ORDER_STATUS_LABELS[value],
   }));
@@ -53,19 +59,47 @@ export default async function AdminOrderPage({
           <OrderDetailView order={order} showSupportLink={false} />
         </div>
 
-        {canManage ? (
+        {canManage ||
+        (canRecordRefund &&
+          order.status === 'cancelled' &&
+          (order.paymentStatus === 'paid' ||
+            order.paymentStatus === 'partially_refunded')) ? (
           <aside className="border-line border p-6 lg:sticky lg:top-10">
-            <h2 className="eyebrow text-fg-subtle mb-5">Fulfilment</h2>
-            <OrderStatusForm
-              reference={order.reference}
-              current={order.status}
-              options={options}
-            />
-            <p className="text-fg-subtle mt-6 text-xs">
-              Marking an order dispatched decrements stock and emails the
-              customer. Both happen once, in the same transaction as the status
-              change.
-            </p>
+            {canManage ? (
+              options.length > 1 ? (
+                <section>
+                  <h2 className="eyebrow text-fg-subtle mb-5">Fulfilment</h2>
+                  <OrderStatusForm
+                    reference={order.reference}
+                    current={order.status}
+                    options={options}
+                  />
+                  <p className="text-fg-subtle mt-6 text-xs">
+                    Dispatch moves reserved stock out of inventory and sends the
+                    dispatch email once. Shipped and terminal orders cannot
+                    return to an earlier fulfilment step.
+                  </p>
+                </section>
+              ) : (
+                <p className="text-fg-subtle text-xs">
+                  This order has no further fulfilment status changes.
+                </p>
+              )
+            ) : null}
+
+            {canRecordRefund &&
+            order.status === 'cancelled' &&
+            (order.paymentStatus === 'paid' ||
+              order.paymentStatus === 'partially_refunded') ? (
+              <section
+                className={
+                  canManage ? 'border-line mt-8 border-t pt-8' : undefined
+                }
+              >
+                <h2 className="eyebrow text-fg-subtle mb-5">Refund</h2>
+                <OrderRefundForm reference={order.reference} />
+              </section>
+            ) : null}
           </aside>
         ) : (
           <aside className="border-line border p-6">

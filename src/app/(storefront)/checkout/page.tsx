@@ -61,6 +61,7 @@ export default async function CheckoutPage() {
             <CheckoutForm
               savedAddresses={savedAddresses}
               defaultEmail={user.email}
+              hasStockIssues={cart.hasStockIssues}
             />
           </div>
           <CheckoutSummary cart={cart} />

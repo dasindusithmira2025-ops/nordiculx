@@ -8,16 +8,16 @@ import {
   listProductsForAdmin,
   type AdminProductFilters,
 } from '@/lib/admin/queries';
-import {
-  bulkEditProducts,
-  createProduct,
-  updateProductQuick,
-} from '@/app/actions/admin';
 import { formatMoney } from '@/lib/money';
 import type { PublishStatus } from '@/lib/db/schema';
 import { Badge } from '@/components/ui/display';
 import { Button } from '@/components/ui/button';
 import { BulkSubmitButton } from '@/components/admin/products/bulk-submit-button';
+import {
+  BulkProductForm,
+  CreateProductForm,
+  ProductQuickForm,
+} from '@/components/admin/products/product-action-forms';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -26,21 +26,6 @@ const statusOptions: { value: PublishStatus; label: string }[] = [
   { value: 'draft', label: 'Draft' },
   { value: 'archived', label: 'Archived' },
 ];
-
-async function updateProductQuickForm(formData: FormData) {
-  'use server';
-  await updateProductQuick(formData);
-}
-
-async function bulkEditProductsForm(formData: FormData) {
-  'use server';
-  await bulkEditProducts(formData);
-}
-
-async function createProductForm(formData: FormData) {
-  'use server';
-  await createProduct(formData);
-}
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -230,11 +215,7 @@ export default async function AdminProductsPage({
         aria-label="Bulk product actions"
         className="border-line border p-4"
       >
-        <form
-          id="bulk-products"
-          action={bulkEditProductsForm}
-          className="grid gap-4 md:grid-cols-[minmax(12rem,1fr)_10rem_9rem_auto]"
-        >
+        <BulkProductForm>
           <label>
             <span className="eyebrow text-fg-subtle">Bulk action</span>
             <select
@@ -274,7 +255,7 @@ export default async function AdminProductsPage({
             />
           </label>
           <BulkSubmitButton formId="bulk-products" />
-        </form>
+        </BulkProductForm>
         <p className="text-fg-subtle mt-3 text-xs">
           Only checked rows are changed. Review the selected rows and values
           before applying a bulk operation.
@@ -293,7 +274,7 @@ export default async function AdminProductsPage({
               </th>
               <th className="eyebrow text-fg-subtle py-3 font-normal">SKU</th>
               <th className="eyebrow text-fg-subtle py-3 font-normal">
-                Status
+                Variant status
               </th>
               <th className="eyebrow text-fg-subtle py-3 font-normal">Price</th>
               <th className="eyebrow text-fg-subtle py-3 font-normal">Sale</th>
@@ -384,11 +365,11 @@ export default async function AdminProductsPage({
                   </td>
                   <td className="py-4 align-top">
                     <div className="space-y-2">
-                      <StatusBadge status={product.status} />
+                      <StatusBadge status={product.variantStatus} />
                       <select
                         form={formId}
                         name="status"
-                        defaultValue={product.status}
+                        defaultValue={product.variantStatus}
                         className="border-line-strong focus:border-fg text-fg block w-32 border-0 border-b bg-transparent py-1 text-xs outline-none"
                       >
                         {statusOptions.map((status) => (
@@ -481,11 +462,7 @@ export default async function AdminProductsPage({
                     />
                   </td>
                   <td className="py-4 align-top">
-                    <form id={formId} action={updateProductQuickForm}>
-                      <Button type="submit" size="sm" variant="secondary">
-                        Save
-                      </Button>
-                    </form>
+                    <ProductQuickForm formId={formId} />
                   </td>
                 </tr>
               );
@@ -497,10 +474,7 @@ export default async function AdminProductsPage({
       <div className="grid gap-8 xl:grid-cols-[1fr_24rem]">
         <section className="border-line border p-5">
           <h2 className="font-display text-fg text-xl">Add product</h2>
-          <form
-            action={createProductForm}
-            className="mt-5 grid gap-4 md:grid-cols-2"
-          >
+          <CreateProductForm>
             <label>
               <span className="eyebrow text-fg-subtle">Name</span>
               <input
@@ -605,10 +579,7 @@ export default async function AdminProductsPage({
                 className="border-line-strong focus:border-fg text-fg mt-2 w-full resize-y border-0 border-b bg-transparent py-2 text-sm outline-none"
               />
             </label>
-            <div className="md:col-span-2">
-              <Button type="submit">Add product</Button>
-            </div>
-          </form>
+          </CreateProductForm>
         </section>
 
         <section className="border-line border p-5">

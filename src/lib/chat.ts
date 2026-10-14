@@ -1,8 +1,8 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { and, asc, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { chatConversations, chatMessages } from '@/lib/db/schema';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { db, type Transaction } from '@/lib/db';
+import { chatConversations, chatMessages, users } from '@/lib/db/schema';
 import { generateToken, hashToken } from '@/lib/tokens';
 import { isProduction } from '@/lib/env';
 import { currentUser } from '@/lib/auth';
@@ -37,6 +37,15 @@ export type ChatView = {
   messages: ChatMessageView[];
   /** Whether staff are considered available right now. */
   staffOnline: boolean;
+};
+
+export type StaffChatConversation = ChatView & {
+  guestName: string | null;
+  guestEmail: string | null;
+  customerEmail: string | null;
+  originPath: string | null;
+  lastMessageAt: Date;
+  unreadForStaff: number;
 };
 
 /**
@@ -186,4 +195,135 @@ export async function markCustomerRead(conversationId: string) {
     .update(chatConversations)
     .set({ unreadForCustomer: 0 })
     .where(eq(chatConversations.id, conversationId));
+}
+
+/** Support queue projection. Callers must enforce staff authorisation. */
+export async function listStaffConversations(): Promise<
+  Omit<StaffChatConversation, 'messages' | 'staffOnline'>[]
+> {
+  const rows = await db
+    .select({
+      id: chatConversations.id,
+      status: chatConversations.status,
+      guestName: chatConversations.guestName,
+      guestEmail: chatConversations.guestEmail,
+      customerEmail: users.email,
+      originPath: chatConversations.originPath,
+      lastMessageAt: chatConversations.lastMessageAt,
+      unreadForStaff: chatConversations.unreadForStaff,
+    })
+    .from(chatConversations)
+    .leftJoin(users, eq(users.id, chatConversations.userId))
+    .orderBy(desc(chatConversations.lastMessageAt))
+    .limit(100);
+
+  return rows.map((row) => ({
+    conversationId: row.id,
+    status: row.status,
+    guestName: row.guestName,
+    guestEmail: row.guestEmail,
+    customerEmail: row.customerEmail,
+    originPath: row.originPath,
+    lastMessageAt: row.lastMessageAt,
+    unreadForStaff: row.unreadForStaff,
+  }));
+}
+
+/** One conversation for the staff workspace. Callers must enforce access. */
+export async function getStaffConversation(
+  conversationId: string,
+): Promise<StaffChatConversation | null> {
+  const rows = await db
+    .select({
+      id: chatConversations.id,
+      status: chatConversations.status,
+      guestName: chatConversations.guestName,
+      guestEmail: chatConversations.guestEmail,
+      customerEmail: users.email,
+      originPath: chatConversations.originPath,
+      lastMessageAt: chatConversations.lastMessageAt,
+      unreadForStaff: chatConversations.unreadForStaff,
+    })
+    .from(chatConversations)
+    .leftJoin(users, eq(users.id, chatConversations.userId))
+    .where(eq(chatConversations.id, conversationId))
+    .limit(1);
+  const conversation = rows[0];
+  if (!conversation) return null;
+
+  const messages = await db
+    .select({
+      id: chatMessages.id,
+      authorRole: chatMessages.authorRole,
+      authorName: chatMessages.authorName,
+      body: chatMessages.body,
+      createdAt: chatMessages.createdAt,
+    })
+    .from(chatMessages)
+    .where(eq(chatMessages.conversationId, conversation.id))
+    .orderBy(asc(chatMessages.createdAt))
+    .limit(200);
+
+  return {
+    conversationId: conversation.id,
+    status: conversation.status,
+    guestName: conversation.guestName,
+    guestEmail: conversation.guestEmail,
+    customerEmail: conversation.customerEmail,
+    originPath: conversation.originPath,
+    lastMessageAt: conversation.lastMessageAt,
+    unreadForStaff: conversation.unreadForStaff,
+    staffOnline: staffOnline(),
+    messages: messages.map((message) => ({
+      id: message.id,
+      authorRole: message.authorRole,
+      authorName: message.authorName,
+      body: message.body,
+      createdAt: message.createdAt.toISOString(),
+    })),
+  };
+}
+
+/** Marks a conversation read by staff after the authorised page has loaded. */
+export async function markStaffRead(conversationId: string) {
+  await db
+    .update(chatConversations)
+    .set({ unreadForStaff: 0 })
+    .where(eq(chatConversations.id, conversationId));
+}
+
+/** Appends an authenticated staff reply and wakes the customer's poller. */
+export async function appendStaffMessage(
+  tx: Transaction,
+  input: {
+    conversationId: string;
+    body: string;
+    authorId: string;
+    authorName: string;
+  },
+) {
+  const [conversation] = await tx
+    .select({ status: chatConversations.status })
+    .from(chatConversations)
+    .where(eq(chatConversations.id, input.conversationId))
+    .for('update')
+    .limit(1);
+  if (!conversation) throw new Error('Conversation not found.');
+
+  await tx.insert(chatMessages).values({
+    conversationId: input.conversationId,
+    authorRole: 'staff',
+    authorId: input.authorId,
+    authorName: input.authorName,
+    body: input.body,
+  });
+  await tx
+    .update(chatConversations)
+    .set({
+      lastMessageAt: new Date(),
+      unreadForCustomer: sql`${chatConversations.unreadForCustomer} + 1`,
+      status: 'pending',
+    })
+    .where(eq(chatConversations.id, input.conversationId));
+  return { previousStatus: conversation.status };
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import {
@@ -16,10 +16,11 @@ import {
   productMedia,
   productVariants,
   publishStatusEnum,
-  trackingEvents,
   reviews,
   reviewStatusEnum,
+  shipments,
   supportTickets,
+  trackingEvents,
   type OrderStatus,
 } from '@/lib/db/schema';
 import { requireStaff } from '@/lib/auth';
@@ -51,6 +52,30 @@ import { parseMoneyInput, percentOf } from '@/lib/money';
 
 const statusSchema = z.enum(orderStatusEnum.enumValues);
 const publishStatusSchema = z.enum(publishStatusEnum.enumValues);
+
+const shipmentSchema = z.object({
+  carrier: z
+    .string()
+    .trim()
+    .max(80)
+    .transform((value) => value || null),
+  trackingNumber: z
+    .string()
+    .trim()
+    .max(120)
+    .transform((value) => value || null),
+  trackingUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .transform((value) => value || null)
+    .refine(
+      (value) =>
+        value === null ||
+        (z.url().safeParse(value).success && /^https?:\/\//i.test(value)),
+      { message: 'Enter an http(s) tracking URL.' },
+    ),
+});
 
 const nullableMoneySchema = z
   .string()
@@ -131,6 +156,7 @@ async function productForVariant(variantId: string) {
     .limit(1);
   return rows[0] ?? null;
 }
+class StockUpdateError extends Error {}
 
 export async function updateProductQuick(
   formData: FormData,
@@ -176,73 +202,78 @@ export async function updateProductQuick(
 
   if (
     input.stockDelta < 0 &&
-    Math.abs(input.stockDelta) > (before.onHand ?? 0)
+    Math.abs(input.stockDelta) > (before.onHand ?? 0) - (before.reserved ?? 0)
   ) {
-    return actionError('Stock cannot be adjusted below zero.');
+    return actionError(
+      'Stock cannot be adjusted below the quantity reserved for orders.',
+    );
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(productVariants)
-      .set({
-        price: input.price,
-        salePrice: input.salePrice,
-        status: input.status,
-        updatedAt: new Date(),
-      })
-      .where(eq(productVariants.id, input.variantId));
+  try {
+    await db.transaction(async (tx) => {
+      if (input.stockDelta !== 0) {
+        const updated = await tx
+          .update(inventoryItems)
+          .set({
+            onHand: sql`${inventoryItems.onHand} + ${input.stockDelta}`,
+            updatedAt: new Date(),
+          })
+          .where(
+            sql`${inventoryItems.variantId} = ${input.variantId} AND ${inventoryItems.onHand} + ${input.stockDelta} >= ${inventoryItems.reserved}`,
+          )
+          .returning({
+            onHand: inventoryItems.onHand,
+            reserved: inventoryItems.reserved,
+          });
+        const after = updated[0];
+        if (!after) {
+          throw new StockUpdateError(
+            'Stock cannot be adjusted below the quantity reserved for orders.',
+          );
+        }
 
-    await tx
-      .update(products)
-      .set({ status: input.status, updatedAt: new Date() })
-      .where(eq(products.id, before.productId));
+        await tx.insert(inventoryMovements).values({
+          variantId: input.variantId,
+          reason: input.stockReason,
+          onHandDelta: input.stockDelta,
+          reservedDelta: 0,
+          onHandAfter: after.onHand,
+          reservedAfter: after.reserved,
+          referenceType: 'admin_product',
+          referenceId: before.productId,
+          note: input.stockNote || null,
+          actorId: actor.id,
+        });
+      }
 
-    if (input.stockDelta !== 0) {
-      const updated = await tx
-        .update(inventoryItems)
+      await tx
+        .update(productVariants)
         .set({
-          onHand: sql`${inventoryItems.onHand} + ${input.stockDelta}`,
+          price: input.price,
+          salePrice: input.salePrice,
+          status: input.status,
           updatedAt: new Date(),
         })
-        .where(
-          sql`${inventoryItems.variantId} = ${input.variantId} AND ${inventoryItems.onHand} + ${input.stockDelta} >= 0`,
-        )
-        .returning({
-          onHand: inventoryItems.onHand,
-          reserved: inventoryItems.reserved,
-        });
+        .where(eq(productVariants.id, input.variantId));
 
-      const after = updated[0];
-      if (!after) throw new Error('Inventory update failed.');
-
-      await tx.insert(inventoryMovements).values({
-        variantId: input.variantId,
-        reason: input.stockReason,
-        onHandDelta: input.stockDelta,
-        reservedDelta: 0,
-        onHandAfter: after.onHand,
-        reservedAfter: after.reserved,
-        referenceType: 'admin_product',
-        referenceId: before.productId,
-        note: input.stockNote || null,
-        actorId: actor.id,
+      await recordAudit({
+        actor,
+        action: 'product.quick_updated',
+        entityType: 'product',
+        entityId: before.productId,
+        changes: {
+          price: { from: before.price, to: input.price },
+          salePrice: { from: before.salePrice, to: input.salePrice },
+          status: { from: before.variantStatus, to: input.status },
+          stockDelta: { from: 0, to: input.stockDelta },
+        },
+        tx,
       });
-    }
-
-    await recordAudit({
-      actor,
-      action: 'product.quick_updated',
-      entityType: 'product',
-      entityId: before.productId,
-      changes: {
-        price: { from: before.price, to: input.price },
-        salePrice: { from: before.salePrice, to: input.salePrice },
-        status: { from: before.status, to: input.status },
-        stockDelta: { from: 0, to: input.stockDelta },
-      },
-      tx,
     });
-  });
+  } catch (error) {
+    if (error instanceof StockUpdateError) return actionError(error.message);
+    throw error;
+  }
 
   // After the transaction, never inside it: a rolled-back restock that had
   // already emailed everybody waiting cannot be taken back. `notifyRestock`
@@ -282,7 +313,6 @@ export async function bulkEditProducts(
       slug: products.slug,
       price: productVariants.price,
       salePrice: productVariants.salePrice,
-      status: products.status,
       onHand: inventoryItems.onHand,
       reserved: inventoryItems.reserved,
     })
@@ -300,10 +330,6 @@ export async function bulkEditProducts(
       for (const row of rows) {
         if (action === 'publish' || action === 'draft') {
           const status = action === 'publish' ? 'published' : 'draft';
-          await tx
-            .update(products)
-            .set({ status, updatedAt: new Date() })
-            .where(eq(products.id, row.productId));
           await tx
             .update(productVariants)
             .set({ status, updatedAt: new Date() })
@@ -339,6 +365,11 @@ export async function bulkEditProducts(
                 : row.price - delta;
           }
           if (nextPrice <= 0) throw new Error('Bulk price cannot be zero.');
+          if (row.salePrice !== null && row.salePrice >= nextPrice) {
+            throw new Error(
+              'A selected sale price must stay lower than its regular price. Clear or lower the sale price before this bulk update.',
+            );
+          }
           await tx
             .update(productVariants)
             .set({ price: nextPrice, updatedAt: new Date() })
@@ -555,15 +586,12 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
 }
 
 /**
- * Moves an order to a new status.
+ * Moves an order to a legal next status.
  *
- * Dispatching converts the reservation into a real stock decrement: until then
- * the units are held but still on hand, and after it they have left the
- * building. Both halves — the inventory update and its ledger row — share the
- * transaction with the status change, so stock can never disagree with the
- * order it was shipped against.
+ * Dispatching converts the reservation into a real stock decrement and creates
+ * its shipment in the same transaction. A shipped order can never re-enter
+ * dispatch, so the inventory movement and dispatch email happen once.
  */
-/** Statuses in which an order's units are reserved but not yet shipped. */
 const HOLDS_RESERVATION: readonly OrderStatus[] = [
   'pending_payment',
   'confirmed',
@@ -571,148 +599,183 @@ const HOLDS_RESERVATION: readonly OrderStatus[] = [
   'packed',
 ];
 
+class DispatchInventoryError extends Error {}
+
+type OrderStatusUpdateResult =
+  | { ok: false; error: string }
+  | { ok: true; changed: false }
+  | {
+      ok: true;
+      changed: true;
+      orderId: string;
+      from: OrderStatus;
+      dispatched: boolean;
+    };
+
 export async function updateOrderStatus(
   formData: FormData,
 ): Promise<ActionResult> {
   const actor = await requireStaff('orders.manage');
-
   const reference = String(formData.get('reference') ?? '');
   const parsed = statusSchema.safeParse(formData.get('status'));
+  const shipment = shipmentSchema.safeParse({
+    carrier: String(formData.get('carrier') ?? ''),
+    trackingNumber: String(formData.get('trackingNumber') ?? ''),
+    trackingUrl: String(formData.get('trackingUrl') ?? ''),
+  });
   const note = String(formData.get('note') ?? '').trim() || null;
 
   if (!reference || !parsed.success) {
     return actionError('That status could not be applied.');
   }
+  if (!shipment.success) {
+    return actionError('Check the shipment tracking details.');
+  }
   const next = parsed.data;
 
-  const result = await db.transaction(async (tx) => {
-    const rows = await tx
-      .select({
-        id: orders.id,
-        status: orders.status,
-        paymentStatus: orders.paymentStatus,
-      })
-      .from(orders)
-      .where(eq(orders.reference, reference))
-      .for('update')
-      .limit(1);
-
-    const order = rows[0];
-    if (!order) return { ok: false as const, error: 'Order not found.' };
-
-    // Checked on the locked row, so a payment landing mid-request is seen.
-    if (!canMoveOrderTo(next, order.paymentStatus)) {
-      return {
-        ok: false as const,
-        error:
-          'This order has not been paid. It can only be left awaiting payment or cancelled.',
-      };
-    }
-
-    // A no-op must not write an audit row or a tracking event — a timeline that
-    // records changes that did not happen is worse than no timeline.
-    if (order.status === next) return { ok: true as const, changed: false };
-
-    // Cancelling returned the units to sale, so reopening would ship stock that
-    // may already be sold to somebody else. A cancelled order stays cancelled.
-    if (order.status === 'cancelled') {
-      return {
-        ok: false as const,
-        error:
-          'A cancelled order cannot be reopened. Its items have been returned to stock.',
-      };
-    }
-
-    await tx
-      .update(orders)
-      .set({ status: next, updatedAt: new Date() })
-      .where(eq(orders.id, order.id));
-
-    await tx.insert(trackingEvents).values({
-      orderId: order.id,
-      status: next,
-      message: note,
-      source: 'staff',
-    });
-
-    // Units stay reserved from checkout until dispatch. Cancelling before then
-    // must hand them back, or every cancelled order hides stock for good.
-    if (next === 'cancelled' && HOLDS_RESERVATION.includes(order.status)) {
-      await releaseOrderReservation(
-        tx,
-        order.id,
-        `Released when order ${reference} was cancelled`,
-      );
-    }
-
-    // Dispatch is the moment stock genuinely leaves. Until now the units were
-    // reserved but still on hand; here both counts fall together, in the same
-    // transaction as the status change, so stock can never disagree with the
-    // order it shipped against.
-    if (next === 'dispatched' && order.status !== 'dispatched') {
-      const lines = await tx
+  let result: OrderStatusUpdateResult;
+  try {
+    result = await db.transaction(async (tx) => {
+      const rows = await tx
         .select({
-          variantId: orderItems.variantId,
-          quantity: orderItems.quantity,
+          id: orders.id,
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
         })
-        .from(orderItems)
-        .where(eq(orderItems.orderId, order.id));
+        .from(orders)
+        .where(eq(orders.reference, reference))
+        .for('update')
+        .limit(1);
 
-      for (const line of lines) {
-        if (!line.variantId) continue;
+      const order = rows[0];
+      if (!order) return { ok: false, error: 'Order not found.' };
+      if (order.status === next) return { ok: true, changed: false };
+      if (!canMoveOrderTo(order.status, next, order.paymentStatus)) {
+        return {
+          ok: false,
+          error: 'That is not a valid next status for this order.',
+        };
+      }
 
-        const moved = await tx
-          .update(inventoryItems)
-          .set({
-            onHand: sql`GREATEST(${inventoryItems.onHand} - ${line.quantity}, 0)`,
-            reserved: sql`GREATEST(${inventoryItems.reserved} - ${line.quantity}, 0)`,
+      let shipmentId: string | null = null;
+      if (next === 'dispatched') {
+        const lines = await tx
+          .select({
+            variantId: orderItems.variantId,
+            quantity: sql<number>`SUM(${orderItems.quantity})::int`,
+          })
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id))
+          .groupBy(orderItems.variantId);
+
+        for (const line of lines) {
+          if (!line.variantId) continue;
+
+          const moved = await tx
+            .update(inventoryItems)
+            .set({
+              onHand: sql`${inventoryItems.onHand} - ${line.quantity}`,
+              reserved: sql`${inventoryItems.reserved} - ${line.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(inventoryItems.variantId, line.variantId),
+                sql`${inventoryItems.onHand} >= ${line.quantity}`,
+                sql`${inventoryItems.reserved} >= ${line.quantity}`,
+              ),
+            )
+            .returning({
+              onHand: inventoryItems.onHand,
+              reserved: inventoryItems.reserved,
+            });
+
+          const after = moved[0];
+          if (!after) {
+            throw new DispatchInventoryError(
+              'This order cannot be dispatched because its reserved stock is no longer available.',
+            );
+          }
+
+          await tx.insert(inventoryMovements).values({
+            variantId: line.variantId,
+            reason: 'order_fulfilled',
+            onHandDelta: -line.quantity,
+            reservedDelta: -line.quantity,
+            onHandAfter: after.onHand,
+            reservedAfter: after.reserved,
+            referenceType: 'order',
+            referenceId: order.id,
+            note: `Dispatched on order ${reference}`,
+          });
+        }
+
+        const createdShipment = await tx
+          .insert(shipments)
+          .values({
+            orderId: order.id,
+            carrier: shipment.data.carrier,
+            trackingNumber: shipment.data.trackingNumber,
+            trackingUrl: shipment.data.trackingUrl,
+            dispatchedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(inventoryItems.variantId, line.variantId))
-          .returning({
-            onHand: inventoryItems.onHand,
-            reserved: inventoryItems.reserved,
-          });
-
-        const after = moved[0];
-        if (!after) continue;
-
-        await tx.insert(inventoryMovements).values({
-          variantId: line.variantId,
-          reason: 'order_fulfilled',
-          onHandDelta: -line.quantity,
-          reservedDelta: -line.quantity,
-          onHandAfter: after.onHand,
-          reservedAfter: after.reserved,
-          referenceType: 'order',
-          referenceId: order.id,
-          note: `Dispatched on order ${reference}`,
-        });
+          .returning({ id: shipments.id });
+        shipmentId = createdShipment[0]?.id ?? null;
+        if (!shipmentId) {
+          throw new Error('Shipment could not be created.');
+        }
       }
-    }
 
-    return {
-      ok: true as const,
-      changed: true,
-      orderId: order.id,
-      from: order.status,
-    };
-  });
+      await tx
+        .update(orders)
+        .set({ status: next, updatedAt: new Date() })
+        .where(eq(orders.id, order.id));
+
+      await tx.insert(trackingEvents).values({
+        orderId: order.id,
+        shipmentId,
+        status: next,
+        message: note,
+        source: 'staff',
+      });
+
+      if (next === 'cancelled' && HOLDS_RESERVATION.includes(order.status)) {
+        await releaseOrderReservation(
+          tx,
+          order.id,
+          `Released when order ${reference} was cancelled`,
+        );
+      }
+
+      await recordAudit({
+        actor,
+        action: 'order.status_changed',
+        entityType: 'order',
+        entityId: order.id,
+        changes: { status: { from: order.status, to: next } },
+        tx,
+      });
+
+      return {
+        ok: true,
+        changed: true,
+        orderId: order.id,
+        from: order.status,
+        dispatched: next === 'dispatched',
+      };
+    });
+  } catch (error) {
+    if (error instanceof DispatchInventoryError) {
+      return actionError(error.message);
+    }
+    throw error;
+  }
 
   if (!result.ok) return actionError(result.error);
   if (!result.changed) return actionOk();
 
-  await recordAudit({
-    actor,
-    action: 'order.status_changed',
-    entityType: 'order',
-    entityId: result.orderId,
-    changes: { status: { from: result.from, to: next } },
-  });
-
-  // Told after the transaction commits: an email promising a dispatch that was
-  // then rolled back cannot be recalled.
-  if (next === 'dispatched') {
+  if (result.dispatched) {
     const order = await getOrderByReference(reference);
     if (order) await sendMail(orderDispatchedEmail(order));
   }
@@ -739,34 +802,46 @@ export async function moderateReview(
     return actionError('That review could not be moderated.');
   }
 
-  const updated = await db
-    .update(reviews)
-    .set({
-      status: parsed.data,
-      moderatedBy: actor.id,
-      moderatedAt: new Date(),
-      moderationNote: note,
-    })
-    .where(eq(reviews.id, id))
-    .returning({ id: reviews.id, productId: reviews.productId });
+  const result = await db.transaction(async (tx) => {
+    const [review] = await tx
+      .select({ status: reviews.status, productId: reviews.productId })
+      .from(reviews)
+      .where(eq(reviews.id, id))
+      .limit(1);
+    if (!review) return null;
+    if (review.status === parsed.data) {
+      return { changed: false, productId: review.productId };
+    }
 
-  if (!updated[0]) return actionError('That review could not be moderated.');
+    await tx
+      .update(reviews)
+      .set({
+        status: parsed.data,
+        moderatedBy: actor.id,
+        moderatedAt: new Date(),
+        moderationNote: note,
+      })
+      .where(eq(reviews.id, id));
+    await recordAudit({
+      actor,
+      action: 'review.moderated',
+      entityType: 'review',
+      entityId: id,
+      changes: { status: { from: review.status, to: parsed.data } },
+      tx,
+    });
 
-  // `products.rating_average` / `rating_count` are what the listing sorts on
-  // and what the PDP's JSON-LD advertises. Nothing recomputed them, so a
-  // published review left the product still reading "No reviews yet".
-  await refreshProductRating(updated[0].productId);
-
-  await recordAudit({
-    actor,
-    action: 'review.moderated',
-    entityType: 'review',
-    entityId: id,
-    changes: { status: { from: 'pending', to: parsed.data } },
+    return { changed: true, productId: review.productId };
   });
 
+  if (!result) return actionError('That review could not be moderated.');
+  if (!result.changed) return actionOk();
+
+  // `products.rating_average` / `rating_count` are what the listing sorts on
+  // and what the PDP's JSON-LD advertises, so update the published view too.
+  await refreshProductRating(result.productId);
+
   revalidatePath('/admin/reviews');
-  // The product page shows the review and its rating; both changed.
   revalidatePath('/product/[slug]', 'page');
   return actionOk();
 }
@@ -787,22 +862,31 @@ export async function setTicketStatus(
     return actionError('That ticket could not be updated.');
   }
 
-  const updated = await db
-    .update(supportTickets)
-    .set({ status, updatedAt: new Date() })
-    .where(eq(supportTickets.id, id))
-    .returning({ id: supportTickets.id });
+  const result = await db.transaction(async (tx) => {
+    const [ticket] = await tx
+      .select({ status: supportTickets.status })
+      .from(supportTickets)
+      .where(eq(supportTickets.id, id))
+      .limit(1);
+    if (!ticket) return null;
+    if (ticket.status === status) return { changed: false };
 
-  if (!updated[0]) return actionError('That ticket could not be updated.');
-
-  await recordAudit({
-    actor,
-    action: 'support.ticket_status_changed',
-    entityType: 'support_ticket',
-    entityId: id,
-    changes: { status: { from: null, to: status } },
+    await tx
+      .update(supportTickets)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(supportTickets.id, id));
+    await recordAudit({
+      actor,
+      action: 'support.ticket_status_changed',
+      entityType: 'support_ticket',
+      entityId: id,
+      changes: { status: { from: ticket.status, to: status } },
+      tx,
+    });
+    return { changed: true };
   });
 
-  revalidatePath('/admin/support');
+  if (!result) return actionError('That ticket could not be updated.');
+  if (result.changed) revalidatePath('/admin/support');
   return actionOk();
 }

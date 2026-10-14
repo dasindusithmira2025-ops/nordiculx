@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { getSession, type ActiveSession, type SessionUser } from './session';
 import { can, type Permission } from './permissions';
 
@@ -43,24 +43,6 @@ export async function requireUser(returnTo?: string): Promise<SessionUser> {
 }
 
 /**
- * Thrown when a staff member is authenticated but lacks the permission. Kept
- * distinct from "not signed in" so the UI can show a 403 rather than bouncing
- * somebody to a login form they are already past.
- */
-export class ForbiddenError extends Error {
-  readonly permission: Permission | undefined;
-  constructor(permission?: Permission) {
-    super(
-      permission
-        ? `Missing required permission: ${permission}`
-        : 'Insufficient permissions',
-    );
-    this.name = 'ForbiddenError';
-    this.permission = permission;
-  }
-}
-
-/**
  * Requires a staff session holding `permission`.
  *
  * This is THE authorisation check for the admin. Hiding a nav item or a button
@@ -76,7 +58,7 @@ export async function requireStaff(
     redirect('/admin/login');
   }
   if (permission && !can(session.user.staffRole, permission)) {
-    throw new ForbiddenError(permission);
+    forbidden();
   }
   return session.user;
 }

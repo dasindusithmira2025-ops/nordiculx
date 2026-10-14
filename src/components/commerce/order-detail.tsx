@@ -67,6 +67,12 @@ export function OrderDetailView({
   order: OrderDetail;
   showSupportLink?: boolean;
 }) {
+  const trackingUrl =
+    order.shipment?.trackingUrl &&
+    /^https?:\/\//i.test(order.shipment.trackingUrl)
+      ? order.shipment.trackingUrl
+      : null;
+
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-6">
@@ -82,6 +88,10 @@ export function OrderDetailView({
           <Badge tone="neutral">{ORDER_STATUS_LABELS[order.status]}</Badge>
           {order.paymentStatus === 'paid' ? (
             <Badge tone="success">Paid</Badge>
+          ) : order.paymentStatus === 'partially_refunded' ? (
+            <Badge tone="low">Partially refunded</Badge>
+          ) : order.paymentStatus === 'refunded' ? (
+            <Badge tone="neutral">Refunded</Badge>
           ) : order.paymentStatus === 'pending' ? (
             <Badge tone="low">Payment pending</Badge>
           ) : order.paymentStatus === 'failed' ? (
@@ -196,6 +206,41 @@ export function OrderDetailView({
         <AddressBlock title="Delivered to" address={order.shippingAddress} />
         <AddressBlock title="Billed to" address={order.billingAddress} />
       </div>
+
+      {order.shipment &&
+      (order.shipment.carrier ||
+        order.shipment.trackingNumber ||
+        trackingUrl) ? (
+        <section className="border-line mt-12 border-t pt-10">
+          <h3 className="eyebrow text-fg-subtle mb-4">Shipment</h3>
+          <dl className="space-y-2 text-sm">
+            {order.shipment.carrier ? (
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-muted">Carrier</dt>
+                <dd className="text-fg text-right">{order.shipment.carrier}</dd>
+              </div>
+            ) : null}
+            {order.shipment.trackingNumber ? (
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-muted">Tracking number</dt>
+                <dd className="text-fg text-right tabular-nums">
+                  {order.shipment.trackingNumber}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          {trackingUrl ? (
+            <a
+              href={trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fg link-underline mt-4 inline-flex text-sm"
+            >
+              Track this shipment
+            </a>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* --- tracking --- */}
       {order.tracking.length > 0 ? (

@@ -26,10 +26,12 @@ export function CheckoutForm({
   savedAddresses,
   defaultEmail,
   defaultPhone,
+  hasStockIssues = false,
 }: {
   savedAddresses: Address[];
   defaultEmail?: string;
   defaultPhone?: string;
+  hasStockIssues?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<
     ActionResult | null,
@@ -54,6 +56,15 @@ export function CheckoutForm({
 
   return (
     <form action={formAction} className="space-y-12">
+      {hasStockIssues ? (
+        <p
+          role="alert"
+          className="border-signal-warning text-fg-muted border-l px-4 py-3 text-sm"
+        >
+          Some items are no longer available in the selected quantity. Update
+          your bag before placing this order.
+        </p>
+      ) : null}
       {state?.ok === false && !state.fieldErrors ? (
         <p
           role="alert"
@@ -80,10 +91,7 @@ export function CheckoutForm({
               defaultValue={defaultEmail}
             />
           </Field>
-          <Field
-            error={error('phone')}
-            hint="Used for delivery questions."
-          >
+          <Field error={error('phone')} hint="Used for delivery questions.">
             <FieldLabel>Phone</FieldLabel>
             <Input
               type="tel"
@@ -333,6 +341,7 @@ export function CheckoutForm({
           fullWidth
           loading={pending}
           loadingLabel="Placing your order"
+          disabled={hasStockIssues}
         >
           Place order
         </Button>

@@ -191,7 +191,9 @@ export function ProductDetail({
                   <label
                     key={v.id}
                     className={cn(
-                      'relative inline-flex cursor-pointer items-center border px-4 py-2.5 text-sm transition-colors',
+                      'relative inline-flex items-center border px-4 py-2.5 text-sm transition-colors',
+                      'focus-within:outline-focus focus-within:outline focus-within:outline-2 focus-within:outline-offset-2',
+                      v.inStock ? 'cursor-pointer' : 'cursor-not-allowed',
                       v.id === variantId
                         ? 'border-fg bg-fg text-surface'
                         : 'border-line-strong text-fg hover:border-fg',
@@ -204,6 +206,7 @@ export function ProductDetail({
                       name="variant"
                       value={v.id}
                       checked={v.id === variantId}
+                      disabled={!v.inStock}
                       onChange={() => {
                         setVariantId(v.id);
                         setQuantity(1);

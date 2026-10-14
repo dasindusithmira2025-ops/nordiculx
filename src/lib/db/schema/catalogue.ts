@@ -11,9 +11,10 @@ import {
   jsonb,
   pgEnum,
   real,
+  check,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 /* ==========================================================================
    CATALOGUE — brands, taxonomy, products, variants, media
@@ -331,6 +332,11 @@ export const productVariants = pgTable(
     uniqueIndex('product_variants_sku_unique').on(t.sku),
     index('product_variants_product_id_idx').on(t.productId),
     index('product_variants_price_idx').on(t.price),
+    check('product_variants_price_positive', sql`${t.price} > 0`),
+    check(
+      'product_variants_sale_price_lt_price',
+      sql`${t.salePrice} IS NULL OR ${t.salePrice} < ${t.price}`,
+    ),
   ],
 );
 

@@ -1,7 +1,7 @@
 import 'server-only';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { orders, trackingEvents } from '@/lib/db/schema';
+import { orders, shipments, trackingEvents } from '@/lib/db/schema';
 import type { OrderStatus, PaymentStatus } from '@/lib/db/schema';
 import { hashToken, tokensMatch } from '@/lib/tokens';
 import { cookies } from 'next/headers';
@@ -53,6 +53,12 @@ export type OrderDetail = OrderSummary & {
     lineTotal: number;
     productSlug: string | null;
   }[];
+  shipment: {
+    carrier: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    dispatchedAt: Date | null;
+  } | null;
   tracking: {
     id: string;
     status: OrderStatus;
@@ -65,7 +71,7 @@ export type OrderDetail = OrderSummary & {
 type OrderRow = typeof orders.$inferSelect;
 
 async function loadOrderDetail(order: OrderRow): Promise<OrderDetail> {
-  const [items, tracking] = await Promise.all([
+  const [items, tracking, shipmentRows] = await Promise.all([
     db.execute(sql`
       SELECT oi.id, oi.product_name, oi.variant_name, oi.brand_name, oi.sku,
              oi.image_url, oi.unit_price, oi.quantity, oi.line_total,
@@ -101,6 +107,17 @@ async function loadOrderDetail(order: OrderRow): Promise<OrderDetail> {
       .from(trackingEvents)
       .where(eq(trackingEvents.orderId, order.id))
       .orderBy(desc(trackingEvents.occurredAt)),
+    db
+      .select({
+        carrier: shipments.carrier,
+        trackingNumber: shipments.trackingNumber,
+        trackingUrl: shipments.trackingUrl,
+        dispatchedAt: shipments.dispatchedAt,
+      })
+      .from(shipments)
+      .where(eq(shipments.orderId, order.id))
+      .orderBy(desc(shipments.createdAt))
+      .limit(1),
   ]);
 
   return {
@@ -136,6 +153,7 @@ async function loadOrderDetail(order: OrderRow): Promise<OrderDetail> {
       lineTotal: i.line_total,
       productSlug: i.product_slug,
     })),
+    shipment: shipmentRows[0] ?? null,
     tracking,
   };
 }

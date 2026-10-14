@@ -21,6 +21,15 @@ export function CheckoutSummary({ cart }: { cart: CartView }) {
       className="border-line bg-surface-sunken border p-6 lg:sticky lg:top-28"
     >
       <h2 className="eyebrow text-fg-subtle mb-6">Your bag</h2>
+      {cart.hasStockIssues ? (
+        <p
+          role="alert"
+          className="border-signal-warning text-fg-muted mb-5 border-l px-3 py-2 text-xs"
+        >
+          Adjust the unavailable quantities in your bag before checkout can
+          continue.
+        </p>
+      ) : null}
 
       <ul className="space-y-5">
         {cart.lines.map((line) => (
@@ -47,6 +56,15 @@ export function CheckoutSummary({ cart }: { cart: CartView }) {
               <p className="text-fg-subtle mt-0.5 text-xs">
                 {line.variantName}
               </p>
+              {line.exceedsStock ? (
+                <p className="text-signal-warning mt-1 text-xs">
+                  Only {line.available} available
+                </p>
+              ) : !line.inStock ? (
+                <p className="text-signal-warning mt-1 text-xs">
+                  Currently unavailable
+                </p>
+              ) : null}
             </div>
 
             <p className="text-fg shrink-0 text-sm tabular-nums">

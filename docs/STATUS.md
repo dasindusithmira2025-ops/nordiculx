@@ -3,9 +3,53 @@
 Updated after every completed slice. This file is the single source of truth
 for what is finished, what is unverified, and what is genuinely blocked.
 
-**Last updated:** 2026-08-21
+**Last updated:** 2026-10-14
 
 ---
+## Current remediation — 2026-10-14
+
+The current remediation closes the identified checkout, fulfilment, staff and
+accessibility defects:
+
+- Order statuses now follow a forward-only, payment-aware graph. Dispatch
+  atomically consumes exactly the reservation, creates one shipment/tracking
+  record and sends mail only after commit; shipped orders cannot be cancelled
+  into an implicit restock.
+- Staff can record provider-completed refunds for cancelled orders and received
+  returns. Cumulative refunds are locked and capped against the captured
+  payment; this does not call a provider refund API.
+- Admin product actions return validation feedback without losing input,
+  preserve valid sale pricing, cannot reduce stock below reservations, and edit
+  the selected variant rather than silently changing its parent product.
+- Support now exposes ticket context and a permission-gated two-way storefront
+  chat inbox. Review moderation can withdraw a published review. Permission
+  failures render the admin forbidden state rather than a generic error.
+- Checkout identifies unavailable quantities before submit; payment returns use
+  success imagery only for paid orders. Shipment data is recorded and shown in
+  account order views and dispatch email.
+- Mobile filters use the focus-managed drawer, unavailable variants are
+  disabled, and the quantity control supports keyboard replacement of its
+  default value.
+
+### Verification in this remediation
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | Passed — 25 files, 266 tests |
+| Focused order/quantity regression tests | Passed — 2 files, 5 tests |
+| `next build` compile and type phases | Passed; prerender then stopped because Postgres at `127.0.0.1:5432` was unavailable |
+| Full `prettier --check .` | Blocked by 288 pre-existing unformatted paths outside this remediation |
+
+The runtime browser and database migration remain unverified on this machine:
+Docker/Postgres was unavailable. Migration `0005_black_proudstar` intentionally
+adds its checks as `NOT VALID`; reconcile historic provider refunds and run
+`db:validate-financial-constraints` in a separate database-backed deployment
+step before validating them.
+
+---
+
 
 ## Recovery note — second resume (2026-08-18)
 
